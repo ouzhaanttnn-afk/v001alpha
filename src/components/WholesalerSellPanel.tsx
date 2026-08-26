@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Pressable, StyleSheet, Text, View, type GestureResponderEvent, type LayoutChangeEvent } from 'react-native';
+import { PanResponder, Pressable, StyleSheet, Text, View, type GestureResponderEvent, type LayoutChangeEvent } from 'react-native';
 import { currentPositionValueTl } from '../engine/pricing';
 import type { InventoryItem } from '../types/game';
 import { colors, fonts, radius } from '../theme';
@@ -21,7 +21,6 @@ export function WholesalerSellPanel({
   onSellSelected: (selections: WholesalerSellSelection[]) => void;
 }) {
   const [selectedById, setSelectedById] = useState<Record<string, number>>({});
-  const [trackWidthsById, setTrackWidthsById] = useState<Record<string, number>>({});
 
   const rows = useMemo(
     () =>
@@ -71,21 +70,6 @@ export function WholesalerSellPanel({
     }));
   };
 
-  const setTrackWidth = (itemId: string, event: LayoutChangeEvent) => {
-    const width = event.nativeEvent.layout.width;
-    setTrackWidthsById((current) => ({ ...current, [itemId]: width }));
-  };
-
-  const setQuantityFromSlider = (
-    item: InventoryItem,
-    stepQuantity: number,
-    event: GestureResponderEvent,
-  ) => {
-    const trackWidth = trackWidthsById[item.id] ?? 1;
-    const ratio = Math.min(1, Math.max(0, event.nativeEvent.locationX / trackWidth));
-    setQuantity(item, item.quantity * ratio, stepQuantity);
-  };
-
   return (
     <Card style={styles.card}>
       <Text style={styles.title}>TOPTANCIYA SAT</Text>
@@ -101,15 +85,12 @@ export function WholesalerSellPanel({
               </View>
               <Text style={styles.unitText} numberOfLines={1}>{row.unitLabel}</Text>
               <View style={styles.controls}>
-                <Pressable
-                  style={styles.sliderTrack}
-                  onLayout={(event) => setTrackWidth(row.item.id, event)}
-                  onPress={(event) => setQuantityFromSlider(row.item, row.stepQuantity, event)}
-                >
-                  <View style={styles.sliderTrackBase} />
-                  <View style={[styles.sliderFill, { width: `${Math.round(row.selectedRatio * 100)}%` }]} />
-                  <View style={[styles.sliderThumb, { left: `${Math.round(row.selectedRatio * 100)}%` }]} />
-                </Pressable>
+                <QuantitySlider
+                  item={row.item}
+                  ratio={row.selectedRatio}
+                  stepQuantity={row.stepQuantity}
+                  onChange={setQuantity}
+                />
                 <Text style={styles.selectedValue}>{row.displaySelected}</Text>
                 <Pressable style={styles.maxButton} onPress={() => setQuantity(row.item, row.item.quantity, row.stepQuantity)}>
                   <Text style={styles.maxLabel}>MAX</Text>
@@ -134,6 +115,46 @@ export function WholesalerSellPanel({
         <Text style={styles.sellButtonLabel}>SEÇİLENLERİ TOPTANCIYA SAT</Text>
       </Pressable>
     </Card>
+  );
+}
+
+function QuantitySlider({
+  item,
+  ratio,
+  stepQuantity,
+  onChange,
+}: {
+  item: InventoryItem;
+  ratio: number;
+  stepQuantity: number;
+  onChange: (item: InventoryItem, quantity: number, stepQuantity: number) => void;
+}) {
+  const [trackWidth, setTrackWidth] = useState(1);
+  const updateFromEvent = (event: GestureResponderEvent) => {
+    const nextRatio = Math.min(1, Math.max(0, event.nativeEvent.locationX / trackWidth));
+    onChange(item, item.quantity * nextRatio, stepQuantity);
+  };
+  const panResponder = useMemo(
+    () =>
+      PanResponder.create({
+        onStartShouldSetPanResponder: () => true,
+        onMoveShouldSetPanResponder: () => true,
+        onPanResponderGrant: updateFromEvent,
+        onPanResponderMove: updateFromEvent,
+      }),
+    [item, onChange, stepQuantity, trackWidth],
+  );
+
+  return (
+    <View
+      style={styles.sliderTrack}
+      onLayout={(event: LayoutChangeEvent) => setTrackWidth(Math.max(1, event.nativeEvent.layout.width))}
+      {...panResponder.panHandlers}
+    >
+      <View style={styles.sliderTrackBase} />
+      <View style={[styles.sliderFill, { width: `${Math.round(ratio * 100)}%` }]} />
+      <View style={[styles.sliderThumb, { left: `${Math.round(ratio * 100)}%` }]} />
+    </View>
   );
 }
 
@@ -203,12 +224,14 @@ const styles = StyleSheet.create({
   sliderFill: {
     position: 'absolute',
     left: 0,
+    top: 10,
     height: 4,
     borderRadius: 999,
     backgroundColor: colors.accent,
   },
   sliderThumb: {
     position: 'absolute',
+    top: 7,
     width: 10,
     height: 10,
     marginLeft: -5,
@@ -216,6 +239,10 @@ const styles = StyleSheet.create({
     backgroundColor: colors.ink,
   },
   sliderTrackBase: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    top: 10,
     height: 4,
     borderRadius: 999,
     backgroundColor: colors.border,
