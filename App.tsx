@@ -20,7 +20,7 @@ import { useFonts } from 'expo-font';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useCallback } from 'react';
-import { PlaytestTouchIndicator } from './src/components/PlaytestTouchIndicator';
+import { View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { useGameClock } from './src/hooks/useGameClock';
 import { RootNavigator } from './src/navigation/RootNavigator';
@@ -65,11 +65,11 @@ export default function App() {
   }
 
   return (
-    <PlaytestTouchIndicator onLayout={onLayoutRootView}>
-      <SafeAreaProvider>
+    <SafeAreaProvider>
+      <View style={{ flex: 1 }} onLayout={onLayoutRootView}>
         <RootNavigator />
         <StatusBar style="dark" />
-      </SafeAreaProvider>
-    </PlaytestTouchIndicator>
+      </View>
+    </SafeAreaProvider>
   );
 }

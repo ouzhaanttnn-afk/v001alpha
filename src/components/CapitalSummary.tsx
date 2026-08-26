@@ -3,7 +3,6 @@ import type { CapitalState, GoldPriceState } from '../types/game';
 import { colors, fonts, fontSizes, radius } from '../theme';
 import { formatGram, formatPercent, formatTl } from '../utils/format';
 import { Card } from './Card';
-import { ReputationGauge } from './ReputationGauge';
 
 // Bölüm 2: Sermaye Gösterimi + Nakit/Stok/Borç Ayrımı.
 // Ayrıca Toptancı Güveni: borcunu vadesinde ödemezsen düşer, düşerse
@@ -11,14 +10,12 @@ import { ReputationGauge } from './ReputationGauge';
 export function CapitalSummary({
   capital,
   goldPrice,
-  wholesalerTrust,
   loanDueDay,
   currentDay,
   onRepayDebt,
 }: {
   capital: CapitalState;
   goldPrice: GoldPriceState;
-  wholesalerTrust: number;
   loanDueDay: number | null;
   currentDay: number;
   onRepayDebt: () => void;
@@ -62,10 +59,6 @@ export function CapitalSummary({
           )}
         </View>
       )}
-
-      <View style={styles.trustRow}>
-        <ReputationGauge score={wholesalerTrust} label="TOPTANCI GÜVENİ" align="flex-start" />
-      </View>
 
       <View style={styles.divider} />
       <Row label="Net Servet" value={formatTl(netWorth)} bold />
@@ -186,8 +179,5 @@ const styles = StyleSheet.create({
     fontFamily: fonts.bodyBold,
     fontSize: 11,
     color: colors.white,
-  },
-  trustRow: {
-    marginTop: 10,
   },
 });

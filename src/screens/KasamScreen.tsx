@@ -11,7 +11,7 @@ import { JewelryTierCard } from '../components/JewelryTierCard';
 import { MeltingJobBanner } from '../components/MeltingJobBanner';
 import { SectionLabel } from '../components/SectionLabel';
 import { StockCard } from '../components/StockCard';
-import { TradingPositionCard } from '../components/TradingPositionCard';
+import { WholesalerSellPanel, type WholesalerSellSelection } from '../components/WholesalerSellPanel';
 import {
   JEWELRY_REQUIRED_LEVEL,
   JEWELRY_TIER_REQUIRED_LEVELS,
@@ -39,7 +39,6 @@ const BANNER_VISIBLE_MS = 4000;
 export function KasamScreen() {
   const inventory = useGameStore((s) => s.inventory);
   const goldPrice = useGameStore((s) => s.goldPrice);
-  const sellInventoryItem = useGameStore((s) => s.sellInventoryItem);
   const sellInvestmentUnits = useGameStore((s) => s.sellInvestmentUnits);
   const realizedTradingProfitTl = useGameStore((s) => s.realizedTradingProfitTl);
   const meltingJob = useGameStore((s) => s.meltingJob);
@@ -136,41 +135,31 @@ export function KasamScreen() {
   const atolyeUpgradeCostTl = workshopUpgradeCostTl(workshop.level, goldPrice.buyPricePerGram);
   const jewelryLocked = level < JEWELRY_REQUIRED_LEVEL;
 
-  const handleSell = (itemId: string) => {
-    const result = sellInventoryItem(itemId);
-    if (!result) return;
+  const handleSellSelections = (selections: WholesalerSellSelection[]) => {
+    let totalSaleValueTl = 0;
+    let totalProfitTl = 0;
+    let totalBaseXp = 0;
+    selections.forEach((selection) => {
+      const item = inventory.find((inventoryItem) => inventoryItem.id === selection.itemId);
+      if (!item) return;
+      const result = sellInvestmentUnits(selection.itemId, selection.quantity);
+      if (!result) return;
+      totalSaleValueTl += result.saleValueTl;
+      totalProfitTl += result.profitTl;
+      totalBaseXp += equivalentGrams(item.grams, item.karat) * result.quantity * XP_PER_EQUIVALENT_GRAM_TRADED;
+    });
+    if (totalSaleValueTl <= 0) return;
+
     showActionToast({
       tone: 'success',
-      message: `✓ Toptancıya satış tamamlandı · +${formatTl(result.saleValueTl)}`,
+      message: `✓ Toptancıya satış tamamlandı · +${formatTl(totalSaleValueTl)}`,
     });
-
-    // Bölüm 6 (STOK→SATIŞ→KÂR): satış gerçekten kâr getirdiyse "Kârlı satış"
-    // bonusu, getirmediyse yine de tamamlanmış bir işlem bonusu — oyuncu
-    // XP'nin nereden geldiğini her zaman görür.
     const bonus =
-      result.profitTl > 0
-        ? { amount: XP_BONUS_PROFITABLE_SALE, reason: 'Kârlı satış' }
-        : { amount: XP_BONUS_DEAL_COMPLETED, reason: 'Müşteri işlemi tamamlandı' };
+      totalProfitTl > 0
+        ? { amount: XP_BONUS_PROFITABLE_SALE, reason: 'Kârlı toptancı satışı' }
+        : { amount: XP_BONUS_DEAL_COMPLETED, reason: 'Toptancı satışı tamamlandı' };
     grantBonusXp(bonus.amount);
-    setXpToast({ amount: result.xpGained + bonus.amount, reason: bonus.reason });
-  };
-  const handleSellQuantity = (itemId: string, quantity: number) => {
-    const item = inventory.find((inventoryItem) => inventoryItem.id === itemId);
-    if (!item) return;
-    const result = sellInvestmentUnits(itemId, quantity);
-    if (!result) return;
-    showActionToast({
-      tone: 'success',
-      message: `✓ Toptancıya satış tamamlandı · +${formatTl(result.saleValueTl)}`,
-    });
-
-    const bonus =
-      result.profitTl > 0
-        ? { amount: XP_BONUS_PROFITABLE_SALE, reason: 'Kârlı kısmi satış' }
-        : { amount: XP_BONUS_DEAL_COMPLETED, reason: 'Kısmi satış tamamlandı' };
-    grantBonusXp(bonus.amount);
-    const baseXp = equivalentGrams(item.grams, item.karat) * result.quantity * XP_PER_EQUIVALENT_GRAM_TRADED;
-    setXpToast({ amount: baseXp + bonus.amount, reason: bonus.reason });
+    setXpToast({ amount: totalBaseXp + bonus.amount, reason: bonus.reason });
   };
 
   return (
@@ -263,28 +252,11 @@ export function KasamScreen() {
           </Text>
         </Card>
 
-        {sarrafiyeItems.length === 0 ? (
-          <Text style={styles.emptyHint}>
-            Elinde henüz HAS, gram/çeyrek altın ya da bilezik yok. Piyasa'daki Toptancıdan Stok Al
-            bölümünden alınca burada listelenir, güncel kurdan toptancıya satabilirsin.
-          </Text>
-        ) : (
-          sarrafiyeItems.map((item) => (
-            <View key={item.id}>
-              <TradingPositionCard
-                item={item}
-                currentValueTl={currentPositionValueTl(item, goldPrice.buyPricePerGram)}
-                currentDay={day}
-                onSell={() => handleSell(item.id)}
-                onSellQuantity={(quantity) => handleSellQuantity(item.id, quantity)}
-                onHold={() => handleHold(item.id)}
-              />
-              {holdHintItemId === item.id && (
-                <Text style={styles.holdHint}>Stokta bekletiliyor — piyasa değişince tekrar bakabilirsin.</Text>
-              )}
-            </View>
-          ))
-        )}
+        <WholesalerSellPanel
+          items={sarrafiyeItems}
+          buyPricePerGram={goldPrice.buyPricePerGram}
+          onSellSelected={handleSellSelections}
+        />
 
         <View
           style={styles.sectionAnchor}

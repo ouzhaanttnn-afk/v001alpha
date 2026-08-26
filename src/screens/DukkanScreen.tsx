@@ -170,16 +170,16 @@ export function DukkanScreen() {
           <BlurView intensity={40} tint="dark" style={styles.topBar}>
             <View style={styles.topBarTint} pointerEvents="none" />
             <View style={styles.avatarRing}>
-              <MetalRing size={52} strokeWidth={5} />
+              <MetalRing size={46} strokeWidth={4} />
               <View style={styles.avatarInner}>
-                <RadialOrb size={44} colorStart="#5A2E86" colorEnd="#2A1140" />
+                <RadialOrb size={38} colorStart="#5A2E86" colorEnd="#2A1140" />
                 <Text style={styles.avatarLetter}>
                   {(playerName || shopName).trim().charAt(0).toUpperCase()}
                 </Text>
               </View>
             </View>
             <View style={styles.levelGroup}>
-              <ShieldBadge level={level} width={24} height={30} />
+              <ShieldBadge level={level} width={21} height={26} />
               <View style={styles.xp}>
                 <View style={styles.xpTrack}>
                   <View style={[styles.xpFill, { width: `${Math.round(xpProgress * 100)}%` }]} />
@@ -200,15 +200,15 @@ export function DukkanScreen() {
               style={styles.bellBtn}
               hitSlop={8}
             >
-              <MetalRing size={42} strokeWidth={4} />
+              <MetalRing size={38} strokeWidth={4} />
               <View style={styles.bellInner}>
-                <RadialOrb size={35} colorStart="#4B2472" colorEnd="#25103A" />
+                <RadialOrb size={32} colorStart="#4B2472" colorEnd="#25103A" />
                 {/* [DÜZELTME] react-native-svg'nin ham <Svg>'i (View/Text'in
                     aksine) web'de RN'in position:relative reset'ini almıyor —
                     bu yüzden mutlak konumlu RadialOrb'un ALTINDA çiziliyordu.
                     zIndex'li bir View'a sarmak paint sırasını düzeltiyor. */}
                 <View style={styles.bellIconWrap}>
-                  <BellIcon color={glass.refGold2} size={16} />
+                  <BellIcon color={glass.refGold2} size={15} />
                 </View>
               </View>
               {pendingCustomerCount > 0 && (
@@ -332,7 +332,7 @@ export function DukkanScreen() {
           >
             <GemShortcutIcon color={lux.goldBright} />
             <Text style={styles.bottomCardLabel}>Toptancı</Text>
-            <Text style={styles.bottomCardMeta}>Güven {wholesalerTrust}/100</Text>
+            <Text style={styles.bottomCardMeta}>Stok / satış</Text>
           </Pressable>
           <Pressable
             style={styles.bottomGlassCard}
@@ -397,7 +397,6 @@ export function DukkanScreen() {
         {!incomingCustomer && <CapitalSummary
           capital={capital}
           goldPrice={goldPrice}
-          wholesalerTrust={wholesalerTrust}
           loanDueDay={loanDueDay}
           currentDay={day}
           onRepayDebt={() => repayDebt(capital.cashTl)}
@@ -452,9 +451,9 @@ const styles = StyleSheet.create({
   },
   content: {
     paddingHorizontal: 10,
-    paddingTop: 6,
+    paddingTop: 4,
     paddingBottom: 12,
-    gap: 4,
+    gap: 3,
   },
 
   // ---------- HERO ----------
@@ -463,11 +462,11 @@ const styles = StyleSheet.create({
   // görünmesi.
   hero: {
     backgroundColor: lux.panelBg,
-    borderRadius: 16,
+    borderRadius: 14,
     borderWidth: 1,
     borderColor: lux.gold,
-    padding: 5,
-    gap: 3,
+    padding: 4,
+    gap: 2,
     shadowColor: lux.purple,
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 0.18,
@@ -491,10 +490,10 @@ const styles = StyleSheet.create({
   topBar: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 5,
-    borderRadius: 22,
-    paddingVertical: 3,
-    paddingHorizontal: 5,
+    gap: 4,
+    borderRadius: 18,
+    paddingVertical: 2,
+    paddingHorizontal: 4,
     borderWidth: 1,
     borderColor: 'rgba(232,180,74,0.55)',
     overflow: 'hidden',
@@ -517,9 +516,9 @@ const styles = StyleSheet.create({
   // kendisine değil) borderRadius=çap/2 vermek gerekiyor, yoksa ışıma kare
   // görünüyor.
   avatarRing: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
+    width: 34,
+    height: 34,
+    borderRadius: 17,
     alignItems: 'center',
     justifyContent: 'center',
     shadowColor: glass.refGold,
@@ -529,22 +528,22 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
   avatarInner: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
     overflow: 'hidden',
   },
   avatarLetter: {
     fontFamily: fonts.displayBold,
-    fontSize: 15,
+    fontSize: 13,
     color: glass.refGold2,
   },
   levelGroup: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 5,
+    gap: 4,
     flex: 1,
   },
   xp: {
@@ -552,8 +551,8 @@ const styles = StyleSheet.create({
     minWidth: 0,
   },
   xpTrack: {
-    height: 7,
-    borderRadius: 5,
+    height: 4,
+    borderRadius: 4,
     backgroundColor: 'rgba(20,8,34,0.72)',
     borderWidth: 1,
     borderColor: 'rgba(232,180,74,0.5)',
@@ -561,7 +560,7 @@ const styles = StyleSheet.create({
   },
   xpFill: {
     height: '100%',
-    borderRadius: 5,
+    borderRadius: 4,
     backgroundColor: glass.refViolet2,
     shadowColor: glass.refViolet2,
     shadowOffset: { width: 0, height: 0 },
@@ -570,17 +569,17 @@ const styles = StyleSheet.create({
   },
   xpLabel: {
     fontFamily: fonts.numeric,
-    fontSize: 8,
+    fontSize: 7,
     letterSpacing: 0.2,
     color: glass.refTextDim,
-    marginTop: 2,
+    marginTop: 1,
   },
   balancePill: {
-    borderRadius: 16,
+    borderRadius: 14,
     borderWidth: 1,
     borderColor: 'rgba(232,180,74,0.34)',
-    paddingVertical: 5,
-    paddingHorizontal: 8,
+    paddingVertical: 4,
+    paddingHorizontal: 7,
     overflow: 'hidden',
   },
   balancePillTint: {
@@ -593,7 +592,7 @@ const styles = StyleSheet.create({
   },
   balanceText: {
     fontFamily: fonts.numericBold,
-    fontSize: 10.5,
+    fontSize: 10,
     color: glass.refGold2,
     textShadowColor: 'rgba(232,180,74,0.4)',
     textShadowOffset: { width: 0, height: 0 },
@@ -602,9 +601,9 @@ const styles = StyleSheet.create({
   // [YENİ] Zil artık üst profil çubuğunun bir parçası — referanstaki `.bell`
   // ile birebir aynı halka/parlama tekniği (bkz. avatarRing).
   bellBtn: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
+    width: 34,
+    height: 34,
+    borderRadius: 17,
     alignItems: 'center',
     justifyContent: 'center',
     shadowColor: glass.refGold,
@@ -614,9 +613,9 @@ const styles = StyleSheet.create({
     elevation: 7,
   },
   bellInner: {
-    width: 31,
-    height: 31,
-    borderRadius: 16,
+    width: 28,
+    height: 28,
+    borderRadius: 14,
     alignItems: 'center',
     justifyContent: 'center',
     overflow: 'hidden',
@@ -631,7 +630,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    gap: 6,
+    gap: 5,
   },
   hudSpeedLeftGroup: {
     flexDirection: 'row',
@@ -660,9 +659,9 @@ const styles = StyleSheet.create({
     color: colors.white,
   },
   hudPauseBtn: {
-    width: 22,
-    height: 22,
-    borderRadius: 11,
+    width: 20,
+    height: 20,
+    borderRadius: 10,
     backgroundColor: lux.purple,
     borderWidth: 1,
     borderColor: lux.gold,
@@ -684,8 +683,8 @@ const styles = StyleSheet.create({
     gap: 1,
   },
   hudSpeedBtn: {
-    paddingVertical: 3,
-    paddingHorizontal: 6,
+    paddingVertical: 2,
+    paddingHorizontal: 5,
     borderRadius: 999,
   },
   hudSpeedBtnActive: {
@@ -693,7 +692,7 @@ const styles = StyleSheet.create({
   },
   hudSpeedLabel: {
     fontFamily: fonts.bodyBold,
-    fontSize: 11,
+    fontSize: 10,
     color: lux.inkMuted,
   },
   hudSpeedLabelActive: {
@@ -720,7 +719,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: lux.gold,
     borderRadius: 8,
-    paddingVertical: 4,
+    paddingVertical: 3,
     paddingHorizontal: 3,
     alignItems: 'center',
   },
