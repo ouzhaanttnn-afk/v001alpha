@@ -3,7 +3,7 @@ import { useNavigation, type CompositeNavigationProp } from '@react-navigation/n
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { BlurView } from 'expo-blur';
 import { useEffect, useMemo, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ActiveOfferSummary, type ActiveOffer } from '../components/ActiveOfferSummary';
 import { BellIcon } from '../components/icons/BellIcon';
@@ -57,6 +57,7 @@ const lux = {
 // müşteriyle pazarlık (NegotiationPanel) doğrudan burada, ayrı bir modal
 // ekrana gitmeden yürüyor (bkz. Bölüm 4.1-4.3, artık tek ekranda).
 export function DukkanScreen() {
+  const { width } = useWindowDimensions();
   const navigation = useNavigation<DukkanNavigationProp>();
   const playerName = useGameStore((s) => s.playerName);
   const shopName = useGameStore((s) => s.shopName);
@@ -116,6 +117,7 @@ export function DukkanScreen() {
     !fourXUnlimited && fourXUnlockedUntilMs !== null ? Math.max(0, (fourXUnlockedUntilMs - nowMs) / 60000) : 0;
 
   const customerHypeActive = customerRushUsedDay === day;
+  const summaryRowWide = width >= 720;
 
   const [showFourXOffer, setShowFourXOffer] = useState(false);
   const handleSpeedChange = (nextSpeed: ClockSpeed) => {
@@ -402,14 +404,18 @@ export function DukkanScreen() {
           onRepayDebt={() => repayDebt(capital.cashTl)}
         />}
 
-        <StokOzetiCard items={inventory} onSeeAll={() => navigation.navigate('Stok')} />
+        <View style={[styles.shopSummaryRow, summaryRowWide && styles.shopSummaryRowWide]}>
+          <View style={[styles.shopSummaryColumn, summaryRowWide && styles.shopSummaryColumnWide]}>
+            <StokOzetiCard items={inventory} onSeeAll={() => navigation.navigate('Stok')} />
+          </View>
 
-        {activeOffer && (
-          <>
-            <SectionLabel>AKTİF TEKLİF</SectionLabel>
-            <ActiveOfferSummary offer={activeOffer} onContinue={() => navigation.navigate('Müşteriler')} />
-          </>
-        )}
+          {activeOffer && (
+            <View style={[styles.shopSummaryColumn, summaryRowWide && styles.shopSummaryColumnWide]}>
+              <SectionLabel>AKTİF TEKLİF</SectionLabel>
+              <ActiveOfferSummary offer={activeOffer} onContinue={() => navigation.navigate('Müşteriler')} />
+            </View>
+          )}
+        </View>
       </ScrollView>
     </SafeAreaView>
   );
@@ -454,6 +460,19 @@ const styles = StyleSheet.create({
     paddingTop: 4,
     paddingBottom: 12,
     gap: 3,
+  },
+  shopSummaryRow: {
+    gap: 4,
+  },
+  shopSummaryRowWide: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+  },
+  shopSummaryColumn: {
+    minWidth: 0,
+  },
+  shopSummaryColumnWide: {
+    flex: 1,
   },
 
   // ---------- HERO ----------
