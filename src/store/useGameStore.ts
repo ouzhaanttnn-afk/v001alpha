@@ -138,6 +138,7 @@ import {
   currentPositionValueTl,
   equivalentGrams,
   hasEquivalentGrams,
+  isWholesalerSellableInventoryItem,
   priceFromReferenceAndSpread,
   randomInRange,
   randomSignedPercent,
@@ -148,21 +149,19 @@ let nextOfferId = 1;
 let nextIncomingCustomerId = 1;
 
 /**
- * Has altın karşılığı gram/maliyet miktarını mevcut Gram Altın (Has)
- * pozisyonuyla (fungible) birleştirir — eritme geri kazanımı (Bölüm 12)
- * ve Atölye üretimi (Bölüm 17) aynı stok kalemine akar.
+ * Has altın karşılığı gram/maliyet miktarını ayrı HAS Altın bakiyesiyle
+ * birleştirir. Bu ticari "Gram Altın" ürünü değildir; eritme/Atölye hası
+ * buraya akar, sonra toptancıya doğrudan satılarak TL'ye çevrilebilir.
  */
-function mergeIntoGramAltin(
+function mergeIntoHasAltin(
   inventory: InventoryItem[],
   grams: number,
   costBasisTl: number,
   acquiredDay: number,
 ): InventoryItem[] {
   if (grams <= 0) return inventory;
-  const gramSpec = toptanciStock.find((s) => s.id === 'gram-altin')!;
   const existingIndex = inventory.findIndex(
-    (i) =>
-      i.name === gramSpec.name && i.category === gramSpec.category && i.karat === gramSpec.karat && i.grams === gramSpec.grams,
+    (i) => i.name === 'HAS Altın' && i.category === 'yatirim' && i.karat === 24 && i.grams === 1,
   );
   return existingIndex >= 0
     ? inventory.map((i, idx) =>
@@ -172,13 +171,14 @@ function mergeIntoGramAltin(
         ...inventory,
         {
           id: String(nextInventoryId++),
-          name: gramSpec.name,
-          category: gramSpec.category,
-          karat: gramSpec.karat,
-          grams: gramSpec.grams,
+          name: 'HAS Altın',
+          category: 'yatirim',
+          karat: 24,
+          grams: 1,
           quantity: grams,
           costBasisTl,
           acquiredDay,
+          source: 'Eritme / Atölye HAS',
         } satisfies InventoryItem,
       ];
 }
@@ -953,13 +953,13 @@ export const useGameStore = create<GameState>()(
     let meltingJob = postOfferState.meltingJob;
     let meltingCashBonus = 0;
     if (meltingJob && currentTotalMinutes >= meltingJob.completesAtTotalMinutes) {
-      inventory = mergeIntoGramAltin(inventory, meltingJob.recoveredGrams, meltingJob.costBasisTl, day);
+      inventory = mergeIntoHasAltin(inventory, meltingJob.recoveredGrams, meltingJob.costBasisTl, day);
       meltingCashBonus = meltingJob.stoneValueTl;
       meltingJob = null;
     }
 
     // v0.2 ara aşama: Atölye artık işçilikli ürün işlemez; yalnızca oyun
-    // günü kapanışında bağımsız Gram Altın (Has) üretir. Üretim idempotent:
+    // günü kapanışında bağımsız HAS Altın bakiyesi üretir. Üretim idempotent:
     // aynı tamamlanmış gün, save/load ya da tekrar tick ile ikinci kez yazılmaz.
     let workshop = normalizeWorkshopState(postOfferState.workshop, postOfferState.atolyeLevel);
     let workshopHasProduced = 0;
@@ -970,7 +970,7 @@ export const useGameStore = create<GameState>()(
       const productionDays = Math.max(0, completedThroughDay - lastProductionDay);
       if (productionDays > 0 && dailyHasOutput > 0) {
         workshopHasProduced = Math.round(dailyHasOutput * productionDays * 100) / 100;
-        inventory = mergeIntoGramAltin(inventory, workshopHasProduced, 0, day);
+        inventory = mergeIntoHasAltin(inventory, workshopHasProduced, 0, day);
         workshop = {
           ...workshop,
           unlocked: true,
@@ -1548,8 +1548,8 @@ export const useGameStore = create<GameState>()(
   sellInventoryItem: (itemId) => {
     const state = get();
     const item = state.inventory.find((i) => i.id === itemId);
-    // İşçilikli ürün (Bölüm 16) burada da hariç: asla doğrudan satılmaz, tek çıkış yolu eritme.
-    if (!item || item.category === 'iscilikli') return null;
+    // İşçilikli ürün burada da hariç: tek likidite yolu eritme → HAS → toptancı.
+    if (!item || !isWholesalerSellableInventoryItem(item)) return null;
 
     const saleValueTl = currentPositionValueTl(item, state.goldPrice.buyPricePerGram);
     const profitTl = saleValueTl - item.costBasisTl;
@@ -1630,7 +1630,7 @@ export const useGameStore = create<GameState>()(
   sellInvestmentUnits: (itemId, quantity) => {
     const state = get();
     const item = state.inventory.find((i) => i.id === itemId);
-    if (!item || item.category === 'iscilikli') return null;
+    if (!item || !isWholesalerSellableInventoryItem(item)) return null;
     const sellQuantity = Math.min(quantity, item.quantity);
     if (sellQuantity <= 0) return null;
 

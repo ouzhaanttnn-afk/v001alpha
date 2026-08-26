@@ -25,6 +25,7 @@ import {
 import { XpToast } from '../components/XpToast';
 import { JEWELRY_PIECES, JEWELRY_TIERS } from '../data/jewelryInvestments';
 import { computeJewelryPieceDailyReturnTl, computeJewelryPiecePriceTl, holdingKey, isJewelrySetComplete } from '../engine/jewelry';
+import { isWholesalerSellableInventoryItem } from '../engine/pricing';
 import { toptanciStock } from '../data/toptanciStock';
 import { currentPositionValueTl, equivalentGrams, useGameStore, workshopDailyHasOutput, workshopUpgradeCostTl } from '../store/useGameStore';
 import { colors, fonts, fontSizes } from '../theme';
@@ -120,7 +121,7 @@ export function KasamScreen() {
     }
   }, [scrollTo, layoutTick]);
 
-  const sarrafiyeItems = inventory.filter((item) => item.category !== 'iscilikli');
+  const sarrafiyeItems = inventory.filter(isWholesalerSellableInventoryItem);
   const sarrafiyeCurrentValueTl = sarrafiyeItems.reduce(
     (sum, item) => sum + currentPositionValueTl(item, goldPrice.buyPricePerGram),
     0,

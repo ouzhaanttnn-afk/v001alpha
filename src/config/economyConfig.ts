@@ -259,7 +259,7 @@ export const CUSTOMER_HYPE_ARRIVAL_MULTIPLIER = 1.4;
 // ---- Atölye (v0.2 ara aşama — gerçek tasarım) -----------------------------
 // Atölye işçilikli ürün işleyen bir sistem DEĞİLDİR. Tek bağımsız pasif
 // HAS üretim rayıdır: Seviye 7'de kurulabilir, Lv1-Lv10 arasında geliştirilir
-// ve yalnızca oyun günü kapanışında Gram Altın (Has) üretir.
+// ve yalnızca oyun günü kapanışında ayrı HAS Altın bakiyesi üretir.
 //
 // SIMULATION_TUNING_REQUIRED: Aşağıdaki maliyet/üretim eğrisi nihai balance
 // değildir. Simülasyon raporu bu değerlerin ekonomiye etkisini ölçmek için

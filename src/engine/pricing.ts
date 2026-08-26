@@ -39,14 +39,29 @@ export function currentPositionValueTl(
  * nominal gram ürünlerinde purity ikinci kez uygulanmaz.
  */
 export function valuationUnitPriceLabel(
-  item: Pick<InventoryItem, 'grams' | 'karat'> & { quantity?: number; marketValueTl: number },
-): { amountTl: number; unit: 'g HAS' | 'adet' } {
+  item: Pick<InventoryItem, 'name' | 'grams' | 'karat'> & { quantity?: number; marketValueTl: number },
+): { amountTl: number; unit: 'gram' | 'adet' } {
   const quantity = Math.max(1, item.quantity ?? 1);
-  const totalEquivalentGrams = hasEquivalentGrams(item) * quantity;
-  if (totalEquivalentGrams > 0) {
-    return { amountTl: item.marketValueTl / totalEquivalentGrams, unit: 'g HAS' };
+  const name = item.name.toLocaleLowerCase('tr-TR');
+  const pricedPerPiece = name.includes('çeyrek') || name.includes('lira');
+  if (pricedPerPiece) {
+    return { amountTl: item.marketValueTl / quantity, unit: 'adet' };
   }
-  return { amountTl: item.marketValueTl / quantity, unit: 'adet' };
+  return { amountTl: item.marketValueTl / Math.max(0.01, item.grams * quantity), unit: 'gram' };
+}
+
+export function isHasAltinItem(item: Pick<InventoryItem, 'name' | 'karat' | 'grams'>): boolean {
+  return item.name === 'HAS Altın' && item.karat === 24 && item.grams === 1;
+}
+
+export function isWholesalerSellableInventoryItem(item: InventoryItem): boolean {
+  if (item.category === 'iscilikli') return false;
+  if (isHasAltinItem(item)) return true;
+  if (item.name === 'Gram Altın' && item.karat === 24 && item.grams === 1) return true;
+  if (item.name === 'Gram Altın (Has)' && item.karat === 24 && item.grams === 1) return true;
+  if (item.name === 'Çeyrek Altın') return true;
+  const name = item.name.toLocaleLowerCase('tr-TR');
+  return (name.includes('bilezik') || name.includes('kelepçe')) && item.grams >= 10;
 }
 
 /** Stok değerini envanterden yeniden hesaplar: sarrafiye güncel kurda mark-to-market, işçilikli ürün de has karşılığıyla değerlenir. */

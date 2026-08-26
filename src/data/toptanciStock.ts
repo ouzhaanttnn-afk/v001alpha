@@ -24,11 +24,8 @@ export interface StockSpec {
 // - 22 ayar saflığı 916,6 milyem = 22/24 ile birebir aynı oran
 //   (equivalentGrams'taki karat/24 formülü zaten bu resmî standartla örtüşüyor).
 export const toptanciStock: StockSpec[] = [
-  { id: 'gram-altin', name: 'Gram Altın (Has)', karat: 24, grams: 1, category: 'yatirim' },
+  { id: 'gram-altin', name: 'Gram Altın', karat: 24, grams: 1, category: 'yatirim' },
   { id: 'ceyrek-altin', name: 'Çeyrek Altın', karat: 22, grams: 1.754, category: 'yatirim' },
-  { id: 'ata-lira', name: 'Ata Lira', karat: 22, grams: 7.216, category: 'yatirim' },
-  { id: '14-ayar-yuzuk', name: '14 Ayar Yüzük', karat: 14, grams: 3.2, category: 'taki' },
-  { id: '18-ayar-kupe', name: '18 Ayar Küpe', karat: 18, grams: 2.4, category: 'taki' },
   { id: '22-ayar-bilezik', name: '22 Ayar Bilezik', karat: 22, grams: 10, category: 'taki' },
   { id: '22-ayar-kelepce', name: '22 Ayar Kelepçe', karat: 22, grams: 18, category: 'taki' },
 ];

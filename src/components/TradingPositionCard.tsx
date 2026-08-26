@@ -40,7 +40,8 @@ export function TradingPositionCard({
   const isProfit = profitTl >= 0;
   const daysHeld = Math.max(0, currentDay - item.acquiredDay);
   const canPartialSell = !!onSellQuantity && item.quantity > initialSellQuantity;
-  const isHasBalance = item.name.toLocaleLowerCase('tr-TR').includes('has') && item.grams === 1 && item.karat === 24;
+  const isHasBalance = item.name === 'HAS Altın' && item.grams === 1 && item.karat === 24;
+  const quantityUnit = isHasBalance ? 'g' : 'adet';
   const changeSellQuantity = (delta: number) => {
     setSellQuantity((current) => Math.min(item.quantity, Math.max(initialSellQuantity, current + delta)));
   };
@@ -62,8 +63,9 @@ export function TradingPositionCard({
         <View style={styles.info}>
           <Text style={styles.name}>{item.name}</Text>
           <Text style={styles.meta}>
-            {item.quantity.toLocaleString('tr-TR', { maximumFractionDigits: 2 })} adet · {item.karat} Ayar,{' '}
-            {item.grams.toLocaleString('tr-TR')}g/adet
+            {isHasBalance
+              ? `${item.quantity.toLocaleString('tr-TR', { maximumFractionDigits: 2 })} ${quantityUnit} saf altın`
+              : `${item.quantity.toLocaleString('tr-TR', { maximumFractionDigits: 2 })} ${quantityUnit} · ${item.karat} Ayar, ${item.grams.toLocaleString('tr-TR')}g/adet`}
           </Text>
           <Text style={styles.heldSince}>
             {daysHeld <= 0 ? 'Bugün alındı' : `${daysHeld} gündür stokta`}
