@@ -1,6 +1,6 @@
 import { useRoute, type RouteProp } from '@react-navigation/native';
 import { useEffect, useRef, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import type { MainTabsParamList, StokScrollTarget } from '../navigation/types';
 import { ActionToast, type ActionToastState } from '../components/ActionToast';
@@ -37,6 +37,7 @@ const BANNER_VISIBLE_MS = 4000;
 // tek tip ağırlıklı ortalama maliyetle takip edilir — hepsi güncel kurdan
 // mark-to-market değerlenip Stok ekranından toptancıya satılabilir.
 export function KasamScreen() {
+  const { width } = useWindowDimensions();
   const inventory = useGameStore((s) => s.inventory);
   const goldPrice = useGameStore((s) => s.goldPrice);
   const sellInvestmentUnits = useGameStore((s) => s.sellInvestmentUnits);
@@ -134,6 +135,7 @@ export function KasamScreen() {
   const atolyeLocked = level < WORKSHOP_CONFIG.requiredLevel;
   const atolyeUpgradeCostTl = workshopUpgradeCostTl(workshop.level, goldPrice.buyPricePerGram);
   const jewelryLocked = level < JEWELRY_REQUIRED_LEVEL;
+  const wideStockLayout = width >= 720;
 
   const handleSellSelections = (selections: WholesalerSellSelection[]) => {
     let totalSaleValueTl = 0;
@@ -224,39 +226,43 @@ export function KasamScreen() {
         )}
 
         <SectionLabel>SARRAFİYE STOĞUN</SectionLabel>
-        <Card>
-          <Text style={styles.summaryLabel}>Toplam Alım-Satım Kârı</Text>
-          <Text
-            style={[
-              styles.summaryValue,
-              { color: realizedTradingProfitTl >= 0 ? colors.positive : colors.negative },
-            ]}
-          >
-            {realizedTradingProfitTl >= 0 ? '+' : ''}
-            {formatTl(realizedTradingProfitTl)}
-          </Text>
-          <Text style={styles.summaryHintMuted}>Alış ve satış fiyatın arasındaki makastan gelir.</Text>
-          <View style={styles.divider} />
-          <Text style={styles.summaryLabel}>Stok Potansiyeli</Text>
-          <Text
-            style={[
-              styles.summaryValueSmall,
-              { color: unrealizedTradingProfitTl >= 0 ? colors.positive : colors.negative },
-            ]}
-          >
-            {unrealizedTradingProfitTl >= 0 ? '+' : ''}
-            {formatTl(unrealizedTradingProfitTl)}
-          </Text>
-          <Text style={styles.summaryHintMuted}>
-            Henüz gerçekleşmedi · stok satılırsa nakde döner.
-          </Text>
-        </Card>
+        <View style={[styles.stockActionLayout, wideStockLayout && styles.stockActionLayoutWide]}>
+          <Card style={[styles.stockSummaryCard, wideStockLayout && styles.stockSummaryCardWide]}>
+            <Text style={styles.summaryLabel}>Toplam Alım-Satım Kârı</Text>
+            <Text
+              style={[
+                styles.summaryValue,
+                { color: realizedTradingProfitTl >= 0 ? colors.positive : colors.negative },
+              ]}
+            >
+              {realizedTradingProfitTl >= 0 ? '+' : ''}
+              {formatTl(realizedTradingProfitTl)}
+            </Text>
+            <Text style={styles.summaryHintMuted}>Alış ve satış fiyatın arasındaki makastan gelir.</Text>
+            <View style={styles.divider} />
+            <Text style={styles.summaryLabel}>Stok Potansiyeli</Text>
+            <Text
+              style={[
+                styles.summaryValueSmall,
+                { color: unrealizedTradingProfitTl >= 0 ? colors.positive : colors.negative },
+              ]}
+            >
+              {unrealizedTradingProfitTl >= 0 ? '+' : ''}
+              {formatTl(unrealizedTradingProfitTl)}
+            </Text>
+            <Text style={styles.summaryHintMuted}>
+              Henüz gerçekleşmedi · stok satılırsa nakde döner.
+            </Text>
+          </Card>
 
-        <WholesalerSellPanel
-          items={sarrafiyeItems}
-          buyPricePerGram={goldPrice.buyPricePerGram}
-          onSellSelected={handleSellSelections}
-        />
+          <View style={styles.stockSellColumn}>
+            <WholesalerSellPanel
+              items={sarrafiyeItems}
+              buyPricePerGram={goldPrice.buyPricePerGram}
+              onSellSelected={handleSellSelections}
+            />
+          </View>
+        </View>
 
         <View
           style={styles.sectionAnchor}
@@ -400,6 +406,24 @@ const styles = StyleSheet.create({
     fontSize: fontSizes.lg,
     color: colors.ink,
     marginTop: 4,
+  },
+  stockActionLayout: {
+    gap: 10,
+  },
+  stockActionLayoutWide: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+  },
+  stockSummaryCard: {
+    width: '100%',
+  },
+  stockSummaryCardWide: {
+    flex: 1,
+    maxWidth: '50%',
+  },
+  stockSellColumn: {
+    flex: 1,
+    minWidth: 0,
   },
   cashDebtHeader: {
     flexDirection: 'row',
