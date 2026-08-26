@@ -1,6 +1,6 @@
 import { useRoute, type RouteProp } from '@react-navigation/native';
 import { useEffect, useRef, useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import type { MainTabsParamList, StokScrollTarget } from '../navigation/types';
 import { ActionToast, type ActionToastState } from '../components/ActionToast';
@@ -37,7 +37,6 @@ const BANNER_VISIBLE_MS = 4000;
 // tek tip ağırlıklı ortalama maliyetle takip edilir — hepsi güncel kurdan
 // mark-to-market değerlenip Stok ekranından toptancıya satılabilir.
 export function KasamScreen() {
-  const { width } = useWindowDimensions();
   const inventory = useGameStore((s) => s.inventory);
   const goldPrice = useGameStore((s) => s.goldPrice);
   const sellInvestmentUnits = useGameStore((s) => s.sellInvestmentUnits);
@@ -135,7 +134,6 @@ export function KasamScreen() {
   const atolyeLocked = level < WORKSHOP_CONFIG.requiredLevel;
   const atolyeUpgradeCostTl = workshopUpgradeCostTl(workshop.level, goldPrice.buyPricePerGram);
   const jewelryLocked = level < JEWELRY_REQUIRED_LEVEL;
-  const wideStockLayout = width >= 720;
 
   const handleSellSelections = (selections: WholesalerSellSelection[]) => {
     let totalSaleValueTl = 0;
@@ -226,8 +224,8 @@ export function KasamScreen() {
         )}
 
         <SectionLabel>SARRAFİYE STOĞUN</SectionLabel>
-        <View style={[styles.stockActionLayout, wideStockLayout && styles.stockActionLayoutWide]}>
-          <Card style={[styles.stockSummaryCard, wideStockLayout && styles.stockSummaryCardWide]}>
+        <View style={styles.stockActionLayout}>
+          <Card style={styles.stockSummaryCard}>
             <Text style={styles.summaryLabel}>Toplam Alım-Satım Kârı</Text>
             <Text
               style={[
@@ -408,18 +406,13 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   stockActionLayout: {
-    gap: 10,
-  },
-  stockActionLayoutWide: {
     flexDirection: 'row',
     alignItems: 'flex-start',
+    gap: 10,
   },
   stockSummaryCard: {
-    width: '100%',
-  },
-  stockSummaryCardWide: {
     flex: 1,
-    maxWidth: '50%',
+    minWidth: 0,
   },
   stockSellColumn: {
     flex: 1,
