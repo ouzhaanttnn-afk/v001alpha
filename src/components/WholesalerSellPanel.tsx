@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View, type GestureResponderEvent, type LayoutChangeEvent } from 'react-native';
 import { currentPositionValueTl } from '../engine/pricing';
 import type { InventoryItem } from '../types/game';
 import { colors, fonts, radius } from '../theme';
@@ -21,6 +21,7 @@ export function WholesalerSellPanel({
   onSellSelected: (selections: WholesalerSellSelection[]) => void;
 }) {
   const [selectedById, setSelectedById] = useState<Record<string, number>>({});
+  const [trackWidthsById, setTrackWidthsById] = useState<Record<string, number>>({});
 
   const rows = useMemo(
     () =>
@@ -30,8 +31,9 @@ export function WholesalerSellPanel({
         const isCoin = item.name.includes('Çeyrek');
         const itemNameLower = item.name.toLocaleLowerCase('tr-TR');
         const isBracelet = itemNameLower.includes('bilezik') || itemNameLower.includes('kelepçe');
-        const stepQuantity = isHas ? 5 / Math.max(0.01, item.grams) : 1;
+        const stepQuantity = isHas ? 0.1 / Math.max(0.01, item.grams) : 1;
         const selectedQuantity = Math.min(item.quantity, Math.max(0, selectedById[item.id] ?? 0));
+        const selectedRatio = item.quantity > 0 ? selectedQuantity / item.quantity : 0;
         const displayHeld = isHas || isBracelet
           ? `${(item.quantity * item.grams).toLocaleString('tr-TR', { maximumFractionDigits: 2 })} g`
           : `${item.quantity.toLocaleString('tr-TR', { maximumFractionDigits: 0 })} adet`;
@@ -41,7 +43,16 @@ export function WholesalerSellPanel({
         const unitLabel = isCoin
           ? `${formatTl(unitSaleValueTl)}/adet`
           : `${formatTl(unitSaleValueTl / Math.max(0.01, item.grams))}/g`;
-        return { item, unitSaleValueTl, selectedQuantity, displayHeld, displaySelected, unitLabel, stepQuantity };
+        return {
+          item,
+          unitSaleValueTl,
+          selectedQuantity,
+          displayHeld,
+          displaySelected,
+          unitLabel,
+          stepQuantity,
+          selectedRatio,
+        };
       }),
     [buyPricePerGram, items, selectedById],
   );
@@ -51,12 +62,28 @@ export function WholesalerSellPanel({
     .filter((row) => row.selectedQuantity > 0)
     .map((row) => ({ itemId: row.item.id, quantity: row.selectedQuantity }));
 
-  const setQuantity = (item: InventoryItem, quantity: number) => {
-    const safeQuantity = Math.round(quantity * 100) / 100;
+  const setQuantity = (item: InventoryItem, quantity: number, stepQuantity: number) => {
+    const steppedQuantity = Math.round(quantity / stepQuantity) * stepQuantity;
+    const safeQuantity = Math.round(steppedQuantity * 100) / 100;
     setSelectedById((current) => ({
       ...current,
       [item.id]: Math.min(item.quantity, Math.max(0, safeQuantity)),
     }));
+  };
+
+  const setTrackWidth = (itemId: string, event: LayoutChangeEvent) => {
+    const width = event.nativeEvent.layout.width;
+    setTrackWidthsById((current) => ({ ...current, [itemId]: width }));
+  };
+
+  const setQuantityFromSlider = (
+    item: InventoryItem,
+    stepQuantity: number,
+    event: GestureResponderEvent,
+  ) => {
+    const trackWidth = trackWidthsById[item.id] ?? 1;
+    const ratio = Math.min(1, Math.max(0, event.nativeEvent.locationX / trackWidth));
+    setQuantity(item, item.quantity * ratio, stepQuantity);
   };
 
   return (
@@ -75,19 +102,16 @@ export function WholesalerSellPanel({
               <Text style={styles.unitText} numberOfLines={1}>{row.unitLabel}</Text>
               <View style={styles.controls}>
                 <Pressable
-                  style={styles.stepButton}
-                  onPress={() => setQuantity(row.item, row.selectedQuantity - row.stepQuantity)}
+                  style={styles.sliderTrack}
+                  onLayout={(event) => setTrackWidth(row.item.id, event)}
+                  onPress={(event) => setQuantityFromSlider(row.item, row.stepQuantity, event)}
                 >
-                  <Text style={styles.stepLabel}>−</Text>
+                  <View style={styles.sliderTrackBase} />
+                  <View style={[styles.sliderFill, { width: `${Math.round(row.selectedRatio * 100)}%` }]} />
+                  <View style={[styles.sliderThumb, { left: `${Math.round(row.selectedRatio * 100)}%` }]} />
                 </Pressable>
                 <Text style={styles.selectedValue}>{row.displaySelected}</Text>
-                <Pressable
-                  style={styles.stepButton}
-                  onPress={() => setQuantity(row.item, row.selectedQuantity + row.stepQuantity)}
-                >
-                  <Text style={styles.stepLabel}>+</Text>
-                </Pressable>
-                <Pressable style={styles.maxButton} onPress={() => setQuantity(row.item, row.item.quantity)}>
+                <Pressable style={styles.maxButton} onPress={() => setQuantity(row.item, row.item.quantity, row.stepQuantity)}>
                   <Text style={styles.maxLabel}>MAX</Text>
                 </Pressable>
               </View>
@@ -166,19 +190,35 @@ const styles = StyleSheet.create({
   controls: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: 6,
     backgroundColor: colors.surfaceSunken,
     borderRadius: radius.sm,
+    paddingLeft: 7,
   },
-  stepButton: {
-    width: 24,
+  sliderTrack: {
+    width: 72,
     height: 24,
-    alignItems: 'center',
     justifyContent: 'center',
   },
-  stepLabel: {
-    fontFamily: fonts.bodyBold,
-    fontSize: 13,
-    color: colors.ink,
+  sliderFill: {
+    position: 'absolute',
+    left: 0,
+    height: 4,
+    borderRadius: 999,
+    backgroundColor: colors.accent,
+  },
+  sliderThumb: {
+    position: 'absolute',
+    width: 10,
+    height: 10,
+    marginLeft: -5,
+    borderRadius: 5,
+    backgroundColor: colors.ink,
+  },
+  sliderTrackBase: {
+    height: 4,
+    borderRadius: 999,
+    backgroundColor: colors.border,
   },
   selectedValue: {
     fontFamily: fonts.monoBold,

@@ -61,7 +61,7 @@ export function isWholesalerSellableInventoryItem(item: InventoryItem): boolean 
   if (item.name === 'Gram Altın (Has)' && item.karat === 24 && item.grams === 1) return true;
   if (item.name === 'Çeyrek Altın') return true;
   const name = item.name.toLocaleLowerCase('tr-TR');
-  return (name.includes('bilezik') || name.includes('kelepçe')) && item.grams >= 10;
+  return name.includes('bilezik') && item.grams >= 10;
 }
 
 /** Stok değerini envanterden yeniden hesaplar: sarrafiye güncel kurda mark-to-market, işçilikli ürün de has karşılığıyla değerlenir. */
