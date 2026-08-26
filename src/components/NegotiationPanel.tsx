@@ -31,6 +31,7 @@ import { calculateOpportunityScore } from '../utils/opportunityScore';
 import {
   evaluateNegotiationTurn,
   initialNegotiationPatience,
+  type NegotiationPhase,
   type NegotiationReactionTone,
 } from '../engine/negotiation';
 import { Badge } from './Badge';
@@ -167,6 +168,7 @@ export function NegotiationPanel({
   const [patience, setPatience] = useState(() => initialNegotiationPatience(customer.bargainingStyle));
   const [offerHistory, setOfferHistory] = useState<number[]>([]);
   const [reaction, setReaction] = useState<{ text: string; tone: NegotiationReactionTone } | null>(null);
+  const [negotiationPhase, setNegotiationPhase] = useState<NegotiationPhase>('OPEN');
   const terminalActionStartedRef = useRef(false);
   const customerDismissStartedRef = useRef(false);
   const negotiationActionPendingRef = useRef(false);
@@ -270,6 +272,7 @@ export function NegotiationPanel({
       setResult('creditDenied');
       return;
     }
+    setNegotiationPhase('ACCEPTED');
     setBorrowedTl(outcome.borrowedTl);
     logCompletedOffer({
       customerName: customer.name,
@@ -292,6 +295,7 @@ export function NegotiationPanel({
     if (terminalActionStartedRef.current) return;
     terminalActionStartedRef.current = true;
     setPendingCounter(null);
+    setNegotiationPhase('REJECTED');
     logCompletedOffer({
       customerName: customer.name,
       productName: product.name,
@@ -326,10 +330,12 @@ export function NegotiationPanel({
       previousOffers: offerHistory,
       roundsUsed: roundsUsedNow,
       maxRounds: COUNTER_OFFER_MAX_ROUNDS,
+      phase: negotiationPhase,
     });
     setOfferHistory((history) => [...history, amount]);
     setPatience(outcome.patienceAfter);
     setReaction({ text: outcome.reaction, tone: outcome.tone });
+    setNegotiationPhase(outcome.phaseAfter);
 
     if (outcome.kind === 'accept') {
       completeDeal(amount, originalThreshold, roundsUsedNow);
@@ -375,10 +381,12 @@ export function NegotiationPanel({
       roundsUsed: roundsUsedNow,
       maxRounds: COUNTER_OFFER_MAX_ROUNDS,
       offerTl: amount,
+      phase: negotiationPhase,
     });
     setOfferHistory((history) => [...history, amount]);
     setPatience(outcome.patienceAfter);
     setReaction({ text: outcome.reaction, tone: outcome.tone });
+    setNegotiationPhase(outcome.phaseAfter);
 
     if (outcome.kind === 'accept') {
       resolveSaleAccept(amount, roundsUsedNow);
@@ -403,6 +411,7 @@ export function NegotiationPanel({
     const settled = resolveIncomingCustomer(true, amount);
     setOffer(amount);
     setSaleCounter(null);
+    setNegotiationPhase('ACCEPTED');
     logCompletedOffer({
       customerName: customer.name,
       productName: product.name,
@@ -432,6 +441,7 @@ export function NegotiationPanel({
     if (terminalActionStartedRef.current) return;
     terminalActionStartedRef.current = true;
     setSaleCounter(null);
+    setNegotiationPhase('REJECTED');
     logCompletedOffer({
       customerName: customer.name,
       productName: product.name,
@@ -454,6 +464,7 @@ export function NegotiationPanel({
     setPendingCounter(null);
     setSaleCounter(null);
     setReaction(null);
+    setNegotiationPhase('REJECTED');
     setResult(null);
     onClose();
   };

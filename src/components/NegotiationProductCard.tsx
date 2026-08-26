@@ -1,5 +1,6 @@
 import { StyleSheet, Text, View } from 'react-native';
 import { UZMAN_GORUSU_BASE_ERROR_PERCENT, UZMAN_GORUSU_ERROR_REDUCTION_PER_LEVEL } from '../config/economyConfig';
+import { valuationUnitPriceLabel } from '../engine/pricing';
 import type { NegotiationProduct } from '../types/negotiation';
 import { fonts, fontSizes } from '../theme';
 import { glass } from '../theme/glass';
@@ -27,8 +28,8 @@ export function NegotiationProductCard({
 }) {
   const hasQuantity = (product.quantity ?? 1) > 1;
   const isCraftedGood = product.category === 'iscilikli';
-  const totalGrossGrams = product.grams * (product.quantity ?? 1);
-  const unitPriceLabel = `Birim fiyat: ${formatTl(product.marketValueTl / Math.max(0.01, totalGrossGrams))}/g`;
+  const unitPrice = valuationUnitPriceLabel(product);
+  const unitPriceLabel = `Birim fiyat: ${formatTl(unitPrice.amountTl)}/${unitPrice.unit}`;
 
   let expertRange: { min: number; max: number } | null = null;
   if (isCraftedGood && uzmanGorusuLevel > 0 && product.actualKarat !== undefined) {

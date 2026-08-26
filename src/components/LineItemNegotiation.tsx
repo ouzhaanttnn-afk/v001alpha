@@ -17,6 +17,7 @@ import {
 import {
   evaluateNegotiationTurn,
   initialNegotiationPatience,
+  type NegotiationPhase,
   type NegotiationReactionTone,
 } from '../engine/negotiation';
 import { equivalentGrams, useGameStore } from '../store/useGameStore';
@@ -93,6 +94,7 @@ export function LineItemNegotiation({
   const [patience, setPatience] = useState(() => initialNegotiationPatience(customer.bargainingStyle));
   const [offerHistory, setOfferHistory] = useState<number[]>([]);
   const [reaction, setReaction] = useState<{ text: string; tone: NegotiationReactionTone } | null>(null);
+  const [negotiationPhase, setNegotiationPhase] = useState<NegotiationPhase>('OPEN');
   const terminalActionStartedRef = useRef(false);
   const [result, setResult] = useState<{ accepted: boolean; amountTl: number; borrowedTl: number; xp: number; reason: string } | null>(
     null,
@@ -148,6 +150,7 @@ export function LineItemNegotiation({
       setResult({ accepted: false, amountTl: amount, borrowedTl: 0, xp: 0, reason: 'Toptancı kredi vermedi' });
       return;
     }
+    setNegotiationPhase('ACCEPTED');
     logCompletedOffer({
       customerName: customer.name,
       productName: product.name,
@@ -168,6 +171,7 @@ export function LineItemNegotiation({
     if (terminalActionStartedRef.current) return;
     terminalActionStartedRef.current = true;
     setPendingCounter(null);
+    setNegotiationPhase('REJECTED');
     logCompletedOffer({
       customerName: customer.name,
       productName: product.name,
@@ -198,10 +202,12 @@ export function LineItemNegotiation({
       previousOffers: offerHistory,
       roundsUsed: roundsUsedNow,
       maxRounds: COUNTER_OFFER_MAX_ROUNDS,
+      phase: negotiationPhase,
     });
     setOfferHistory((history) => [...history, amount]);
     setPatience(outcome.patienceAfter);
     setReaction({ text: outcome.reaction, tone: outcome.tone });
+    setNegotiationPhase(outcome.phaseAfter);
     if (outcome.kind === 'accept') {
       settleAccepted(amount, originalThreshold, roundsUsedNow);
       return;

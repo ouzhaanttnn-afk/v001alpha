@@ -41,6 +41,7 @@ import {
   MIN_TRUST_FOR_CREDIT,
   MINUTES_PER_DAY,
   OFFER_RESOLUTION_DELAY_MINUTES,
+  PROGRESSION_UNLOCKS,
   RESTART_FLUCTUATION_MAX_PERCENT,
   RESTART_FLUCTUATION_MIN_PERCENT,
   SKILL_POINTS_PER_LEVEL,
@@ -217,6 +218,32 @@ function normalizeWorkshopState(workshop?: Partial<WorkshopState>, legacyAtolyeL
   };
 }
 
+function normalizeDaySettlementSummary(summary?: Partial<DaySettlementSummary> | null): DaySettlementSummary | null {
+  if (!summary || typeof summary.day !== 'number') return null;
+  const activeTradeCashTl = summary.activeTradeCashTl ?? 0;
+  const passiveInvestmentCashTl = summary.passiveInvestmentCashTl ?? 0;
+  const meltingCashTl = summary.meltingCashTl ?? 0;
+  return {
+    day: summary.day,
+    activeTradeCashTl,
+    activeTradeProfitTl: summary.activeTradeProfitTl ?? 0,
+    passiveInvestmentCashTl,
+    workshopHasGrams: summary.workshopHasGrams ?? 0,
+    meltingCashTl,
+    totalEconomicDeltaTl: summary.totalEconomicDeltaTl ?? activeTradeCashTl + passiveInvestmentCashTl + meltingCashTl,
+  };
+}
+
+function normalizeCustomerQueue(customers: Array<IncomingCustomer | null | undefined>, totalMinutesNow: number): IncomingCustomer[] {
+  const seen = new Set<string>();
+  return customers.filter((customer): customer is IncomingCustomer => {
+    if (!customer?.id || seen.has(customer.id)) return false;
+    if (customer.expiresAtTotalMinutes <= totalMinutesNow) return false;
+    seen.add(customer.id);
+    return true;
+  });
+}
+
 export function charismaTrafficBonus(score: number): number {
   const points = KARIZMA_TRAFFIC_BONUS_POINTS;
   const clamped = Math.max(0, Math.min(100, score));
@@ -248,7 +275,11 @@ interface BozdurmaCandidate {
 /** Bölüm 6/10: müşteriden alım (bozdurma) için ürün + miktar üretir — çoğunlukla stoktaki 3 kalemden biri (küçük/orta miktar), nadiren büyük karışık ayarlı bir hurda parti. */
 function pickBozdurmaCandidate(day = 1): BozdurmaCandidate {
   const bulkLotChance =
-    day < 15 ? BOZDURMA_BULK_LOT_PROBABILITY * 0.25 : day < 45 ? BOZDURMA_BULK_LOT_PROBABILITY * 0.6 : BOZDURMA_BULK_LOT_PROBABILITY;
+    day < PROGRESSION_UNLOCKS.productPools.bulkLots
+      ? 0
+      : day < PROGRESSION_UNLOCKS.productPools.rareLargeLots
+        ? BOZDURMA_BULK_LOT_PROBABILITY * 0.6
+        : BOZDURMA_BULK_LOT_PROBABILITY;
   if (Math.random() < bulkLotChance) {
     const karat = [14, 18, 20, 22][Math.floor(Math.random() * 4)];
     const maxGrams = day < 30 ? 500 : day < 75 ? 1000 : BOZDURMA_BULK_LOT_MAX_GRAMS;
@@ -368,9 +399,11 @@ export interface MeltingJob {
 export interface DaySettlementSummary {
   day: number;
   activeTradeCashTl: number;
+  activeTradeProfitTl: number;
   passiveInvestmentCashTl: number;
   workshopHasGrams: number;
   meltingCashTl: number;
+  totalEconomicDeltaTl: number;
 }
 
 interface GameState {
@@ -431,6 +464,10 @@ interface GameState {
   jewelryHoldings: JewelryHoldings;
   /** Son tamamlanan oyun günü için kısa settlement özeti; ödeme hesabını tekrar çalıştırmaz. */
   lastDaySettlementSummary: DaySettlementSummary | null;
+  /** Gün içinde gerçekleşen aktif ticaretin gün sonu özetine taşınan nakit hareketi. */
+  dailyActiveTradeCashTl: number;
+  /** Gün içinde gerçekleşen aktif ticaretin realize kâr/zarar toplamı. */
+  dailyActiveTradeProfitTl: number;
   /** Bölüm 22: 4x hızın açık olduğu GERÇEK DÜNYA epoch ms'i (Date.now() ile karşılaştırılır) — reklamla kazanılır, yoksa null. */
   fourXUnlockedUntilMs: number | null;
   /** Bölüm 22: küçük bir IAP ile alınan kalıcı sınırsız 4x hakkı. */
@@ -670,6 +707,8 @@ function createNewGameState(): Partial<GameState> {
     atolyeLevel: 0,
     jewelryHoldings: {},
     lastDaySettlementSummary: null,
+    dailyActiveTradeCashTl: 0,
+    dailyActiveTradeProfitTl: 0,
     fourXUnlockedUntilMs: null,
     fourXUnlimited: false,
     customerHypeUntilMs: null,
@@ -734,6 +773,8 @@ export const useGameStore = create<GameState>()(
   atolyeLevel: 0,
   jewelryHoldings: {},
   lastDaySettlementSummary: null,
+  dailyActiveTradeCashTl: 0,
+  dailyActiveTradeProfitTl: 0,
   fourXUnlockedUntilMs: null,
   fourXUnlimited: false,
   customerHypeUntilMs: null,
@@ -1067,7 +1108,7 @@ export const useGameStore = create<GameState>()(
               expiresAtTotalMinutes: currentTotalMinutes + patienceMinutes,
             };
           }
-        } else if (Math.random() < CRAFTED_GOOD_CUSTOMER_PROBABILITY) {
+        } else if (day >= PROGRESSION_UNLOCKS.productPools.craftedGoods && Math.random() < CRAFTED_GOOD_CUSTOMER_PROBABILITY) {
           // Bölüm 11/14: işçilikli ürün müşterisi — beyan edilen ayar
           // (karat) her zaman gerçek olmayabilir; gerçek ayar/kusur/taş
           // değeri Uzman Görüşü ile açığa çıkana kadar gizli kalır.
@@ -1106,7 +1147,7 @@ export const useGameStore = create<GameState>()(
             scaleReading,
             expiresAtTotalMinutes: currentTotalMinutes + patienceMinutes,
           };
-        } else if (Math.random() < MULTI_ITEM_CUSTOMER_PROBABILITY) {
+        } else if (day >= PROGRESSION_UNLOCKS.productPools.multiItem && Math.random() < MULTI_ITEM_CUSTOMER_PROBABILITY) {
           // [YENİ] v3 — Toplu Alım: 2-3 farklı üründen oluşan, kalem bazlı
           // pazarlık edilen bir bozdurma ziyareti.
           const lines = pickMultiItemBozdurmaLines(nextBuyPrice);
@@ -1196,12 +1237,16 @@ export const useGameStore = create<GameState>()(
       daysElapsed > 0
         ? {
             day: day - 1,
-            activeTradeCashTl: 0,
+            activeTradeCashTl: postOfferState.dailyActiveTradeCashTl,
+            activeTradeProfitTl: postOfferState.dailyActiveTradeProfitTl,
             passiveInvestmentCashTl: jewelryCashDelta,
             workshopHasGrams: workshopHasProduced,
             meltingCashTl: meltingCashBonus,
+            totalEconomicDeltaTl: postOfferState.dailyActiveTradeCashTl + jewelryCashDelta + meltingCashBonus,
           }
         : postOfferState.lastDaySettlementSummary;
+    const dailyActiveTradeCashTl = daysElapsed > 0 ? 0 : postOfferState.dailyActiveTradeCashTl;
+    const dailyActiveTradeProfitTl = daysElapsed > 0 ? 0 : postOfferState.dailyActiveTradeProfitTl;
 
     // [YENİ] Not: müşteri artık tick() içinde asla doğrudan tezgahı
     // (incomingCustomer) doldurmuyor — sadece kuyruğa ekleniyor. Otomatik
@@ -1231,6 +1276,8 @@ export const useGameStore = create<GameState>()(
       customerRushFeedback,
       jewelryHoldings,
       lastDaySettlementSummary,
+      dailyActiveTradeCashTl,
+      dailyActiveTradeProfitTl,
       capital,
       goldPrice: {
         buyPricePerGram: nextBuyPrice,
@@ -1344,6 +1391,7 @@ export const useGameStore = create<GameState>()(
       },
       loanDueDay,
       brokerDeal,
+      dailyActiveTradeCashTl: state.dailyActiveTradeCashTl - paidAmountTl,
       ...applyXpGain(state, xpGained),
     });
     return { success: true, borrowedTl: shortfall, xpGained };
@@ -1394,6 +1442,8 @@ export const useGameStore = create<GameState>()(
       brokerDeal: null,
       realizedTradingProfitTl: state.realizedTradingProfitTl + profitTl,
       totalTradingCostBasisTl: state.totalTradingCostBasisTl + soldCostBasisTl,
+      dailyActiveTradeCashTl: state.dailyActiveTradeCashTl + saleValueTl,
+      dailyActiveTradeProfitTl: state.dailyActiveTradeProfitTl + profitTl,
       capital: {
         ...state.capital,
         cashTl: state.capital.cashTl + saleValueTl,
@@ -1510,6 +1560,8 @@ export const useGameStore = create<GameState>()(
       inventory,
       realizedTradingProfitTl: state.realizedTradingProfitTl + profitTl,
       totalTradingCostBasisTl: state.totalTradingCostBasisTl + item.costBasisTl,
+      dailyActiveTradeCashTl: state.dailyActiveTradeCashTl + saleValueTl,
+      dailyActiveTradeProfitTl: state.dailyActiveTradeProfitTl + profitTl,
       capital: {
         ...state.capital,
         cashTl: state.capital.cashTl + saleValueTl,
@@ -1569,6 +1621,7 @@ export const useGameStore = create<GameState>()(
         cashTl: state.capital.cashTl - totalCostTl,
         stockValueTl: computeStockValueTl(inventory, state.goldPrice.buyPricePerGram),
       },
+      dailyActiveTradeCashTl: state.dailyActiveTradeCashTl - totalCostTl,
       ...applyXpGain(state, xpGained),
     });
     return { success: true };
@@ -1602,6 +1655,8 @@ export const useGameStore = create<GameState>()(
       inventory,
       realizedTradingProfitTl: state.realizedTradingProfitTl + profitTl,
       totalTradingCostBasisTl: state.totalTradingCostBasisTl + soldCostBasisTl,
+      dailyActiveTradeCashTl: state.dailyActiveTradeCashTl + saleValueTl,
+      dailyActiveTradeProfitTl: state.dailyActiveTradeProfitTl + profitTl,
       capital: {
         ...state.capital,
         cashTl: state.capital.cashTl + saleValueTl,
@@ -1707,6 +1762,8 @@ export const useGameStore = create<GameState>()(
       inventory,
       realizedTradingProfitTl: state.realizedTradingProfitTl + profitTl,
       totalTradingCostBasisTl: state.totalTradingCostBasisTl + soldCostBasisTl,
+      dailyActiveTradeCashTl: state.dailyActiveTradeCashTl + amountTl,
+      dailyActiveTradeProfitTl: state.dailyActiveTradeProfitTl + profitTl,
       capital: {
         ...state.capital,
         cashTl: state.capital.cashTl + amountTl,
@@ -1815,10 +1872,18 @@ export const useGameStore = create<GameState>()(
         const persisted = (persistedState ?? {}) as Partial<GameState>;
         const workshop = normalizeWorkshopState(persisted.workshop, persisted.atolyeLevel ?? currentState.atolyeLevel);
         const day = persisted.day ?? currentState.day;
+        const minuteOfDay = persisted.minuteOfDay ?? currentState.minuteOfDay;
+        const totalMinutesNow = day * MINUTES_PER_DAY + minuteOfDay;
         const jewelryHoldings = normalizeJewelryHoldings(persisted.jewelryHoldings, day);
+        const waitingCustomers = normalizeCustomerQueue(
+          [persisted.incomingCustomer, ...(persisted.waitingCustomers ?? [])],
+          totalMinutesNow,
+        );
         return {
           ...currentState,
           ...persisted,
+          incomingCustomer: null,
+          waitingCustomers,
           workshop,
           atolyeLevel: workshop.level,
           jewelryHoldings,
@@ -1829,7 +1894,9 @@ export const useGameStore = create<GameState>()(
           customerRushUsedDay: persisted.customerRushUsedDay ?? null,
           customerRushFeedback: persisted.customerRushFeedback ?? null,
           firstSessionHintsDismissed: persisted.firstSessionHintsDismissed ?? {},
-          lastDaySettlementSummary: persisted.lastDaySettlementSummary ?? null,
+          lastDaySettlementSummary: normalizeDaySettlementSummary(persisted.lastDaySettlementSummary),
+          dailyActiveTradeCashTl: persisted.dailyActiveTradeCashTl ?? 0,
+          dailyActiveTradeProfitTl: persisted.dailyActiveTradeProfitTl ?? 0,
         };
       },
       // Skill tanımları/oyun kodu değişse bile eski kayıtlar yüklenebilsin diye
@@ -1864,6 +1931,8 @@ export const useGameStore = create<GameState>()(
         atolyeLevel: state.atolyeLevel,
         jewelryHoldings: state.jewelryHoldings,
         lastDaySettlementSummary: state.lastDaySettlementSummary,
+        dailyActiveTradeCashTl: state.dailyActiveTradeCashTl,
+        dailyActiveTradeProfitTl: state.dailyActiveTradeProfitTl,
         fourXUnlockedUntilMs: state.fourXUnlockedUntilMs,
         fourXUnlimited: state.fourXUnlimited,
         customerHypeUntilMs: state.customerHypeUntilMs,

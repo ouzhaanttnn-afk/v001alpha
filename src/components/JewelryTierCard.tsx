@@ -35,7 +35,7 @@ export function JewelryTierCard({
   onBuyPiece: (pieceId: string) => void;
 }) {
   return (
-    <Card>
+    <Card style={styles.card}>
       <View style={styles.headerRow}>
         <Text style={styles.name}>{tier.label}</Text>
         {hasSetBonus && <Badge tone="positive" label="Set Bonusu +%10" />}
@@ -43,9 +43,7 @@ export function JewelryTierCard({
       {locked ? (
         <Text style={styles.meta}>Kilitli — Seviye {requiredLevel} gerekiyor</Text>
       ) : (
-        <Text style={styles.meta}>
-          30 gün vade · Set tamamlanırsa günlük gelire +%10
-        </Text>
+        <Text style={styles.meta}>30 gün · 4/4 set günlük gelire +%10</Text>
       )}
       <View style={styles.piecesRow}>
         {pieces.map((piece) => {
@@ -82,6 +80,9 @@ export function JewelryTierCard({
 }
 
 const styles = StyleSheet.create({
+  card: {
+    padding: 9,
+  },
   headerRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -96,13 +97,13 @@ const styles = StyleSheet.create({
     fontFamily: fonts.mono,
     fontSize: fontSizes.xs,
     color: colors.inkMuted,
-    marginTop: 4,
+    marginTop: 2,
   },
   piecesRow: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: 8,
-    marginTop: 10,
+    gap: 6,
+    marginTop: 7,
   },
   pieceButton: {
     flexBasis: '47%',
@@ -110,8 +111,8 @@ const styles = StyleSheet.create({
     borderRadius: radius.sm,
     borderWidth: 1,
     borderColor: colors.border,
-    paddingVertical: 8,
-    paddingHorizontal: 10,
+    paddingVertical: 6,
+    paddingHorizontal: 8,
     backgroundColor: colors.surfaceSunken,
   },
   pieceButtonOwned: {
@@ -123,7 +124,7 @@ const styles = StyleSheet.create({
   },
   pieceLabel: {
     fontFamily: fonts.bodyMedium,
-    fontSize: 12,
+    fontSize: 11,
     color: colors.ink,
   },
   pieceLabelOwned: {
@@ -131,7 +132,7 @@ const styles = StyleSheet.create({
   },
   pieceStatus: {
     fontFamily: fonts.mono,
-    fontSize: 10,
+    fontSize: 9,
     color: colors.inkMuted,
     marginTop: 2,
   },

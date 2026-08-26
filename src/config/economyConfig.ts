@@ -78,6 +78,39 @@ export const MIN_TRUST_FOR_CREDIT = 30;
 // uzunluğa ulaşınca (mekan dolu) yeni müşteri üretimi geçici olarak durur.
 export const MAX_WAITING_QUEUE_LENGTH = 5;
 export const INCOMING_CUSTOMER_CHECKS_PER_DAY = 20;
+
+// ---- Merkezi Progression / Unlock Haritası -------------------------------
+// Level tabanlı açılımlar tek mantıksal kaynakta tutulur. Eski export isimleri
+// aşağıda bu haritadan türetilir; böylece ekranlar ve store dağınık magic
+// number okumaz.
+export const PROGRESSION_UNLOCKS = {
+  workshop: 7,
+  jewelry: {
+    base: 7,
+    tiers: {
+      ayar8: 7,
+      ayar14: 12,
+      ayar18: 18,
+      ayar22: 28,
+    },
+  },
+  customerPersonas: {
+    early: 1,
+    fırsatçı: 8,
+    makulAlici: 12,
+    sabirsiz: 16,
+    yuksekButceli: 25,
+    degeriniBilen: 40,
+    nadirDegerli: 70,
+  },
+  productPools: {
+    standard: 1,
+    craftedGoods: 4,
+    multiItem: 10,
+    bulkLots: 15,
+    rareLargeLots: 45,
+  },
+} as const;
 export const INCOMING_CUSTOMER_TRIGGER_PROBABILITY = 1;
 export const INCOMING_CUSTOMER_EXPIRY_MINUTES = 90;
 export const DAILY_CUSTOMER_TARGET_CURVE = [
@@ -234,20 +267,20 @@ export const CUSTOMER_HYPE_ARRIVAL_MULTIPLIER = 1.4;
 // değiştirilmemelidir.
 export const WORKSHOP_CONFIG = {
   simulationTuningRequired: true,
-  requiredLevel: 7,
+  requiredLevel: PROGRESSION_UNLOCKS.workshop,
   maxLevel: 10,
-  unlockCostEquivalentHasGrams: 25,
+  unlockCostEquivalentHasGrams: 18,
   levels: [
-    { level: 1, upgradeCostEquivalentHasGrams: 25, dailyHasOutput: 0.45 },
-    { level: 2, upgradeCostEquivalentHasGrams: 40, dailyHasOutput: 0.85 },
-    { level: 3, upgradeCostEquivalentHasGrams: 60, dailyHasOutput: 1.35 },
-    { level: 4, upgradeCostEquivalentHasGrams: 90, dailyHasOutput: 2 },
-    { level: 5, upgradeCostEquivalentHasGrams: 130, dailyHasOutput: 2.8 },
-    { level: 6, upgradeCostEquivalentHasGrams: 190, dailyHasOutput: 3.8 },
-    { level: 7, upgradeCostEquivalentHasGrams: 280, dailyHasOutput: 5 },
-    { level: 8, upgradeCostEquivalentHasGrams: 420, dailyHasOutput: 6.4 },
-    { level: 9, upgradeCostEquivalentHasGrams: 650, dailyHasOutput: 8 },
-    { level: 10, upgradeCostEquivalentHasGrams: 1000, dailyHasOutput: 10 },
+    { level: 1, upgradeCostEquivalentHasGrams: 18, dailyHasOutput: 0.35 },
+    { level: 2, upgradeCostEquivalentHasGrams: 30, dailyHasOutput: 0.7 },
+    { level: 3, upgradeCostEquivalentHasGrams: 48, dailyHasOutput: 1.1 },
+    { level: 4, upgradeCostEquivalentHasGrams: 75, dailyHasOutput: 1.65 },
+    { level: 5, upgradeCostEquivalentHasGrams: 115, dailyHasOutput: 2.35 },
+    { level: 6, upgradeCostEquivalentHasGrams: 175, dailyHasOutput: 3.2 },
+    { level: 7, upgradeCostEquivalentHasGrams: 270, dailyHasOutput: 4.25 },
+    { level: 8, upgradeCostEquivalentHasGrams: 430, dailyHasOutput: 5.5 },
+    { level: 9, upgradeCostEquivalentHasGrams: 700, dailyHasOutput: 7 },
+    { level: 10, upgradeCostEquivalentHasGrams: 1150, dailyHasOutput: 8.75 },
   ],
 } as const;
 
@@ -257,13 +290,8 @@ export const ATOLYE_REQUIRED_LEVEL = WORKSHOP_CONFIG.requiredLevel;
 export const ATOLYE_MAX_LEVEL = WORKSHOP_CONFIG.maxLevel;
 
 // ---- Takı Yatırımı — 30 Günlük Sermaye Bağlama (v0.2 Faz 6) ---------------
-export const JEWELRY_REQUIRED_LEVEL = 7;
-export const JEWELRY_TIER_REQUIRED_LEVELS = {
-  ayar8: 7,
-  ayar14: 12,
-  ayar18: 18,
-  ayar22: 28,
-} as const;
+export const JEWELRY_REQUIRED_LEVEL = PROGRESSION_UNLOCKS.jewelry.base;
+export const JEWELRY_TIER_REQUIRED_LEVELS = PROGRESSION_UNLOCKS.jewelry.tiers;
 export const PASSIVE_INVESTMENT_TERM_DAYS = 30;
 export const JEWELRY_SET_BONUS_PCT = 0.1;
 export const PASSIVE_INVESTMENT_CONFIG = {
@@ -276,7 +304,7 @@ export const PASSIVE_INVESTMENT_CONFIG = {
       label: '8 Ayar',
       karat: 8,
       requiredLevel: JEWELRY_TIER_REQUIRED_LEVELS.ayar8,
-      roi30Days: 0.18,
+      roi30Days: 0.16,
       pieces: [
         { id: 'yuzuk', label: 'Yüzük', principalTl: 120000 },
         { id: 'kupe', label: 'Küpe', principalTl: 150000 },
@@ -289,7 +317,7 @@ export const PASSIVE_INVESTMENT_CONFIG = {
       label: '14 Ayar',
       karat: 14,
       requiredLevel: JEWELRY_TIER_REQUIRED_LEVELS.ayar14,
-      roi30Days: 0.21,
+      roi30Days: 0.19,
       pieces: [
         { id: 'yuzuk', label: 'Yüzük', principalTl: 300000 },
         { id: 'kupe', label: 'Küpe', principalTl: 380000 },
@@ -302,7 +330,7 @@ export const PASSIVE_INVESTMENT_CONFIG = {
       label: '18 Ayar',
       karat: 18,
       requiredLevel: JEWELRY_TIER_REQUIRED_LEVELS.ayar18,
-      roi30Days: 0.24,
+      roi30Days: 0.22,
       pieces: [
         { id: 'yuzuk', label: 'Yüzük', principalTl: 700000 },
         { id: 'kupe', label: 'Küpe', principalTl: 850000 },
@@ -315,7 +343,7 @@ export const PASSIVE_INVESTMENT_CONFIG = {
       label: '22 Ayar',
       karat: 22,
       requiredLevel: JEWELRY_TIER_REQUIRED_LEVELS.ayar22,
-      roi30Days: 0.28,
+      roi30Days: 0.26,
       pieces: [
         { id: 'yuzuk', label: 'Yüzük', principalTl: 2000000 },
         { id: 'kupe', label: 'Küpe', principalTl: 2400000 },

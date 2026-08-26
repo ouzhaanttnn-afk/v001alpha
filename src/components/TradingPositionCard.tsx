@@ -58,7 +58,7 @@ export function TradingPositionCard({
   return (
     <Card style={styles.card}>
       <View style={styles.header}>
-        <ProductIcon category={item.category} name={item.name} size={26} />
+        <ProductIcon category={item.category} name={item.name} size={22} />
         <View style={styles.info}>
           <Text style={styles.name}>{item.name}</Text>
           <Text style={styles.meta}>
@@ -72,14 +72,11 @@ export function TradingPositionCard({
       </View>
 
       <View style={styles.priceRow}>
-        <View style={styles.priceColumn}>
-          <Text style={styles.priceLabel}>Ort. Maliyet</Text>
-          <Text style={styles.priceValue}>{formatTl(avgCostPerUnit)}</Text>
-        </View>
-        <View style={styles.priceColumn}>
-          <Text style={styles.priceLabel}>Güncel Değer</Text>
-          <Text style={styles.priceValue}>{formatTl(currentValuePerUnit)}</Text>
-        </View>
+        <Text style={styles.priceLabel}>Ort. {formatTl(avgCostPerUnit)}</Text>
+        <Text style={styles.priceLabel}>Birim {formatTl(currentValuePerUnit)}</Text>
+        <Text style={[styles.priceValue, { color: selectedProfitTl >= 0 ? colors.positive : colors.negative }]}>
+          {selectedProfitTl >= 0 ? '+' : ''}{formatTl(selectedProfitTl)}
+        </Text>
       </View>
 
       {canPartialSell && (
@@ -131,22 +128,18 @@ export function TradingPositionCard({
           </Pressable>
         </View>
       </View>
-      {canPartialSell && (
-        <Text style={[styles.selectedHint, { color: selectedProfitTl >= 0 ? colors.positive : colors.negative }]}>
-          Seçili satış sonucu: {selectedProfitTl >= 0 ? '+' : ''}
-          {formatTl(selectedProfitTl)}
-        </Text>
-      )}
     </Card>
   );
 }
 
 const styles = StyleSheet.create({
-  card: {},
+  card: {
+    padding: 9,
+  },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
+    gap: 7,
   },
   info: {
     flex: 1,
@@ -164,65 +157,64 @@ const styles = StyleSheet.create({
   },
   heldSince: {
     fontFamily: fonts.body,
-    fontSize: 11,
+    fontSize: 10,
     color: colors.inkMuted,
-    marginTop: 2,
+    marginTop: 1,
   },
   priceRow: {
     flexDirection: 'row',
-    marginTop: 8,
-  },
-  priceColumn: {
-    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 6,
+    marginTop: 6,
   },
   priceLabel: {
     fontFamily: fonts.bodyMedium,
-    fontSize: 11,
+    fontSize: 10,
     color: colors.inkMuted,
   },
   priceValue: {
     fontFamily: fonts.monoBold,
-    fontSize: fontSizes.md,
+    fontSize: fontSizes.xs,
     color: colors.ink,
-    marginTop: 2,
   },
   footer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginTop: 10,
-    paddingTop: 10,
+    marginTop: 7,
+    paddingTop: 7,
     borderTopWidth: 1,
     borderTopColor: colors.border,
   },
   sellQuantityBlock: {
-    marginTop: 8,
-    paddingTop: 8,
+    marginTop: 6,
+    paddingTop: 6,
     borderTopWidth: 1,
     borderTopColor: colors.border,
-    gap: 6,
+    gap: 5,
   },
   sellQuantityRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    gap: 10,
+    gap: 6,
   },
   quickRow: {
     flexDirection: 'row',
-    gap: 6,
+    gap: 5,
   },
   quickButton: {
     flex: 1,
     borderRadius: radius.sm,
     borderWidth: 1,
     borderColor: colors.border,
-    paddingVertical: 5,
+    paddingVertical: 4,
     alignItems: 'center',
   },
   quickButtonLabel: {
     fontFamily: fonts.bodyBold,
-    fontSize: 11,
+    fontSize: 10,
     color: colors.inkMuted,
   },
   stepper: {
@@ -232,66 +224,60 @@ const styles = StyleSheet.create({
     borderRadius: radius.sm,
   },
   stepperButton: {
-    width: 30,
-    height: 30,
+    width: 26,
+    height: 26,
     alignItems: 'center',
     justifyContent: 'center',
   },
   stepperButtonLabel: {
     fontFamily: fonts.bodyBold,
-    fontSize: fontSizes.md,
+    fontSize: fontSizes.sm,
     color: colors.ink,
   },
   stepperValue: {
     fontFamily: fonts.monoBold,
-    fontSize: fontSizes.sm,
+    fontSize: fontSizes.xs,
     color: colors.ink,
-    minWidth: 34,
+    minWidth: 32,
     textAlign: 'center',
   },
   allButton: {
-    paddingHorizontal: 9,
-    height: 30,
+    paddingHorizontal: 8,
+    height: 26,
     justifyContent: 'center',
     borderLeftWidth: 1,
     borderLeftColor: colors.border,
   },
   allButtonLabel: {
     fontFamily: fonts.bodyBold,
-    fontSize: 11,
+    fontSize: 10,
     color: colors.inkMuted,
   },
   buttonGroup: {
     flexDirection: 'row',
-    gap: 8,
+    gap: 5,
   },
   holdButton: {
     borderRadius: radius.sm,
-    paddingVertical: 5,
-    paddingHorizontal: 14,
+    paddingVertical: 4,
+    paddingHorizontal: 9,
     borderWidth: 1,
     borderColor: colors.border,
   },
   holdButtonLabel: {
     fontFamily: fonts.bodyMedium,
-    fontSize: 12,
+    fontSize: 11,
     color: colors.inkMuted,
   },
   sellButton: {
     backgroundColor: colors.accent,
     borderRadius: radius.sm,
-    paddingVertical: 5,
-    paddingHorizontal: 14,
-  },
-  selectedHint: {
-    fontFamily: fonts.bodyMedium,
-    fontSize: 11,
-    marginTop: 6,
-    textAlign: 'right',
+    paddingVertical: 4,
+    paddingHorizontal: 9,
   },
   sellButtonLabel: {
     fontFamily: fonts.bodyMedium,
-    fontSize: 12,
+    fontSize: 11,
     color: colors.white,
   },
 });

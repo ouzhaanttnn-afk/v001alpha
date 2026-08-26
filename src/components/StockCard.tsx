@@ -44,7 +44,7 @@ export function StockCard({
   return (
     <Card style={styles.card}>
       <View style={styles.header}>
-        <ProductIcon category={spec.category} name={spec.name} size={26} />
+        <ProductIcon category={spec.category} name={spec.name} size={22} />
         <View style={styles.info}>
           <Text style={styles.name}>{spec.name}</Text>
           <Text style={styles.meta}>
@@ -60,17 +60,10 @@ export function StockCard({
       </View>
 
       <View style={styles.priceRow}>
-        <Text style={styles.priceLabel}>BİRİM ALIŞ</Text>
-        <Text style={styles.priceValue}>{formatTl(unitPriceTl)}</Text>
-      </View>
-      <View style={styles.priceRowCompact}>
-        <Text style={styles.priceLabel}>Toplam</Text>
-        <Text style={styles.priceValueSmall}>{formatTl(totalCostTl)}</Text>
-      </View>
-      <View style={styles.priceRowCompact}>
-        <Text style={styles.priceLabel}>İşlem sonrası nakit</Text>
+        <Text style={styles.priceLabel}>Birim {formatTl(unitPriceTl)}</Text>
+        <Text style={styles.priceLabel}>Toplam {formatTl(totalCostTl)}</Text>
         <Text style={[styles.priceValueSmall, leavesLowCash && styles.warningValue]}>
-          {formatTl(Math.max(0, cashAfterTl))}
+          Kalan {formatTl(Math.max(0, cashAfterTl))}
         </Text>
       </View>
 
@@ -105,11 +98,13 @@ export function StockCard({
 }
 
 const styles = StyleSheet.create({
-  card: {},
+  card: {
+    padding: 9,
+  },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
+    gap: 7,
   },
   info: {
     flex: 1,
@@ -128,18 +123,13 @@ const styles = StyleSheet.create({
   priceRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    alignItems: 'baseline',
-    marginTop: 10,
-  },
-  priceRowCompact: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'baseline',
-    marginTop: 4,
+    alignItems: 'center',
+    gap: 6,
+    marginTop: 6,
   },
   priceLabel: {
     fontFamily: fonts.bodyMedium,
-    fontSize: 11,
+    fontSize: 10,
     color: colors.inkMuted,
   },
   priceValue: {
@@ -159,8 +149,8 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 10,
-    marginTop: 10,
-    paddingTop: 10,
+    marginTop: 7,
+    paddingTop: 7,
     borderTopWidth: 1,
     borderTopColor: colors.border,
   },
@@ -171,8 +161,8 @@ const styles = StyleSheet.create({
     borderRadius: radius.sm,
   },
   stepperButton: {
-    width: 30,
-    height: 30,
+    width: 26,
+    height: 26,
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -192,7 +182,7 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.accent,
     borderRadius: radius.sm,
-    paddingVertical: 8,
+    paddingVertical: 6,
     alignItems: 'center',
   },
   buyButtonDisabled: {
@@ -200,7 +190,7 @@ const styles = StyleSheet.create({
   },
   buyButtonLabel: {
     fontFamily: fonts.bodyMedium,
-    fontSize: 12,
+    fontSize: 11,
     color: colors.white,
   },
   hint: {

@@ -32,6 +32,23 @@ export function currentPositionValueTl(
   return hasEquivalentGrams(item) * item.quantity * buyPricePerGram;
 }
 
+/**
+ * Pazarlık/valuation UI'ında gösterilecek birim fiyatı, ürün kartında ayrı
+ * bir gross gram formülü kurmadan doğrudan aynı toplam değer kaynağından
+ * türetir: marketValueTl / toplam has karşılığı gram. Böylece Çeyrek gibi
+ * nominal gram ürünlerinde purity ikinci kez uygulanmaz.
+ */
+export function valuationUnitPriceLabel(
+  item: Pick<InventoryItem, 'grams' | 'karat'> & { quantity?: number; marketValueTl: number },
+): { amountTl: number; unit: 'g HAS' | 'adet' } {
+  const quantity = Math.max(1, item.quantity ?? 1);
+  const totalEquivalentGrams = hasEquivalentGrams(item) * quantity;
+  if (totalEquivalentGrams > 0) {
+    return { amountTl: item.marketValueTl / totalEquivalentGrams, unit: 'g HAS' };
+  }
+  return { amountTl: item.marketValueTl / quantity, unit: 'adet' };
+}
+
 /** Stok değerini envanterden yeniden hesaplar: sarrafiye güncel kurda mark-to-market, işçilikli ürün de has karşılığıyla değerlenir. */
 export function computeStockValueTl(inventory: InventoryItem[], buyPricePerGram: number): number {
   return inventory.reduce((sum, item) => {

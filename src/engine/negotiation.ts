@@ -129,13 +129,14 @@ export function evaluateLineItemOffer(
 
 export type NegotiationDirection = 'buy' | 'sell';
 export type NegotiationReactionTone = 'accept' | 'counter' | 'warning' | 'repeat' | 'final' | 'leave';
+export type NegotiationPhase = 'OPEN' | 'HARDENING' | 'FINAL_OFFER' | 'ACCEPTED' | 'REJECTED';
 
 export type NegotiationTurnOutcome =
-  | { kind: 'accept'; patienceAfter: number; reaction: string; tone: 'accept' }
-  | { kind: 'counter'; counterAmountTl: number; patienceAfter: number; reaction: string; tone: 'counter' }
-  | { kind: 'warning'; patienceAfter: number; reaction: string; tone: 'warning' | 'repeat' }
-  | { kind: 'final'; counterAmountTl: number; patienceAfter: number; reaction: string; tone: 'final' }
-  | { kind: 'leave'; patienceAfter: 0; reaction: string; tone: 'leave' };
+  | { kind: 'accept'; patienceAfter: number; reaction: string; tone: 'accept'; phaseAfter: 'ACCEPTED' }
+  | { kind: 'counter'; counterAmountTl: number; patienceAfter: number; reaction: string; tone: 'counter'; phaseAfter: 'HARDENING' }
+  | { kind: 'warning'; patienceAfter: number; reaction: string; tone: 'warning' | 'repeat'; phaseAfter: 'OPEN' | 'HARDENING' | 'FINAL_OFFER' }
+  | { kind: 'final'; counterAmountTl: number; patienceAfter: number; reaction: string; tone: 'final'; phaseAfter: 'FINAL_OFFER' }
+  | { kind: 'leave'; patienceAfter: 0; reaction: string; tone: 'leave'; phaseAfter: 'REJECTED' };
 
 export interface EvaluateNegotiationTurnArgs {
   direction: NegotiationDirection;
@@ -148,6 +149,7 @@ export interface EvaluateNegotiationTurnArgs {
   previousOffers: number[];
   roundsUsed: number;
   maxRounds: number;
+  phase?: NegotiationPhase;
 }
 
 function isUrgent(urgency?: string): boolean {
@@ -203,16 +205,41 @@ function pickReaction(options: string[], seed: number): string {
 export function evaluateNegotiationTurn(args: EvaluateNegotiationTurnArgs): NegotiationTurnOutcome {
   const adjustedThreshold = adjustedTurnThreshold(args.direction, args.thresholdTl, args.karizmaScore);
   const gapRatio = unfavorableGapRatio(args.direction, args.offerTl, adjustedThreshold);
+  const phase = args.phase ?? 'OPEN';
 
   if (gapRatio === 0) {
     return {
       kind: 'accept',
       patienceAfter: args.patience,
       tone: 'accept',
+      phaseAfter: 'ACCEPTED',
       reaction:
         args.direction === 'buy'
           ? pickReaction(['Tamamdır, bu rakam olur.', 'Peki, kabul.', 'Bu fiyata anlaştık.'], args.offerTl + args.roundsUsed)
           : pickReaction(['Peki, bu fiyattan alırım.', 'Tamam, alıyorum.', 'Bu fiyat olur.'], args.offerTl + args.roundsUsed),
+    };
+  }
+
+  if (phase === 'FINAL_OFFER') {
+    return {
+      kind: 'leave',
+      patienceAfter: 0,
+      tone: 'leave',
+      phaseAfter: 'REJECTED',
+      reaction:
+        args.direction === 'buy'
+          ? 'Son fiyatı söyledim, anlaşamayacağız.'
+          : 'Son teklifimi geçemem, iyi günler.',
+    };
+  }
+
+  if (phase === 'ACCEPTED' || phase === 'REJECTED') {
+    return {
+      kind: 'leave',
+      patienceAfter: 0,
+      tone: 'leave',
+      phaseAfter: 'REJECTED',
+      reaction: 'Bu pazarlık zaten kapanmıştı.',
     };
   }
 
@@ -223,12 +250,13 @@ export function evaluateNegotiationTurn(args: EvaluateNegotiationTurnArgs): Nego
   if (isNearRepeat(args.offerTl, args.previousOffers, adjustedThreshold)) {
     const repeatedPatience = Math.max(0, args.patience - Math.max(1, patienceLoss));
     if (repeatedPatience === 0) {
-      return { kind: 'leave', patienceAfter: 0, tone: 'leave', reaction: 'Olmayacak galiba, iyi günler.' };
+      return { kind: 'leave', patienceAfter: 0, tone: 'leave', phaseAfter: 'REJECTED', reaction: 'Olmayacak galiba, iyi günler.' };
     }
     return {
       kind: 'warning',
       patienceAfter: repeatedPatience,
       tone: 'repeat',
+      phaseAfter: 'HARDENING',
       reaction: pickReaction(
         ['Az önce de aynı rakamı söylediniz.', 'Rakam değişmedi ki.', 'Aynı teklifle ilerleyemeyiz.'],
         args.offerTl + repeatedPatience,
@@ -241,6 +269,7 @@ export function evaluateNegotiationTurn(args: EvaluateNegotiationTurnArgs): Nego
       kind: 'leave',
       patienceAfter: 0,
       tone: 'leave',
+      phaseAfter: 'REJECTED',
       reaction:
         args.direction === 'buy'
           ? pickReaction(['Bu fiyata verecek değilim. İyi günler.', 'Olmayacak galiba, iyi günler.'], args.offerTl)
@@ -253,6 +282,7 @@ export function evaluateNegotiationTurn(args: EvaluateNegotiationTurnArgs): Nego
       kind: 'warning',
       patienceAfter,
       tone: 'warning',
+      phaseAfter: 'HARDENING',
       reaction:
         args.direction === 'buy'
           ? pickReaction(['Bu rakama veremem.', 'Biraz daha ciddi bir teklif bekliyorum.'], args.offerTl)
@@ -276,6 +306,7 @@ export function evaluateNegotiationTurn(args: EvaluateNegotiationTurnArgs): Nego
       counterAmountTl: proposedCounter,
       patienceAfter,
       tone: 'final',
+      phaseAfter: 'FINAL_OFFER',
       reaction: args.direction === 'buy' ? 'Son fiyatım bu.' : 'Son teklifim bu.',
     };
   }
@@ -285,6 +316,7 @@ export function evaluateNegotiationTurn(args: EvaluateNegotiationTurnArgs): Nego
       kind: 'warning',
       patienceAfter,
       tone: 'warning',
+      phaseAfter: 'HARDENING',
       reaction:
         args.direction === 'buy'
           ? pickReaction(['Bu rakam bana düşük geldi.', 'Bu rakama yaklaşamam.'], args.offerTl + patienceAfter)
@@ -298,6 +330,7 @@ export function evaluateNegotiationTurn(args: EvaluateNegotiationTurnArgs): Nego
       counterAmountTl: proposedCounter,
       patienceAfter,
       tone: 'counter',
+      phaseAfter: 'HARDENING',
       reaction:
         hardeningRound
           ? args.direction === 'buy'
@@ -313,6 +346,7 @@ export function evaluateNegotiationTurn(args: EvaluateNegotiationTurnArgs): Nego
     kind: 'warning',
     patienceAfter,
     tone: 'warning',
+    phaseAfter: 'HARDENING',
     reaction:
       args.direction === 'buy'
         ? pickReaction(['Biraz daha ciddi bir teklif bekliyorum.', 'Bu teklif beni ikna etmedi.'], args.offerTl)

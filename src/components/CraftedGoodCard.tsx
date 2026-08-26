@@ -32,7 +32,7 @@ export function CraftedGoodCard({
   return (
     <Card style={styles.card}>
       <View style={styles.header}>
-        <ProductIcon category={item.category} name={item.name} size={26} />
+        <ProductIcon category={item.category} name={item.name} size={22} />
         <View style={styles.info}>
           <Text style={styles.name}>{item.name}</Text>
           <Text style={styles.meta}>
@@ -86,11 +86,13 @@ export function CraftedGoodCard({
 }
 
 const styles = StyleSheet.create({
-  card: {},
+  card: {
+    padding: 9,
+  },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
+    gap: 7,
   },
   info: {
     flex: 1,
@@ -120,8 +122,8 @@ const styles = StyleSheet.create({
   valueGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    rowGap: 6,
-    marginTop: 10,
+    rowGap: 4,
+    marginTop: 7,
   },
   valueCell: {
     width: '50%',
@@ -140,12 +142,12 @@ const styles = StyleSheet.create({
   actions: {
     flexDirection: 'row',
     gap: 6,
-    marginTop: 10,
+    marginTop: 7,
   },
   secondaryButton: {
     flex: 1,
     borderRadius: radius.sm,
-    paddingVertical: 7,
+    paddingVertical: 5,
     alignItems: 'center',
     borderWidth: 1,
     borderColor: colors.border,
@@ -159,7 +161,7 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.ink,
     borderRadius: radius.sm,
-    paddingVertical: 7,
+    paddingVertical: 5,
     alignItems: 'center',
   },
   disabled: {
@@ -171,7 +173,7 @@ const styles = StyleSheet.create({
     color: colors.white,
   },
   notesRow: {
-    marginTop: 8,
+    marginTop: 6,
     gap: 2,
   },
   note: {

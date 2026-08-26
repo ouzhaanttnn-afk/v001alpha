@@ -32,7 +32,7 @@ export function AtolyeCard({
 }) {
   const isMax = upgradeCostTl === null;
   return (
-    <Card>
+    <Card style={styles.card}>
       <View style={styles.headerRow}>
         <Text style={styles.title}>ATÖLYE</Text>
         <Text style={styles.level}>
@@ -83,6 +83,9 @@ function Row({ label, value }: { label: string; value: string }) {
 }
 
 const styles = StyleSheet.create({
+  card: {
+    padding: 9,
+  },
   headerRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -103,11 +106,11 @@ const styles = StyleSheet.create({
     fontFamily: fonts.body,
     fontSize: fontSizes.sm,
     color: colors.ink,
-    marginTop: 6,
+    marginTop: 4,
   },
   metrics: {
-    marginTop: 8,
-    gap: 5,
+    marginTop: 6,
+    gap: 3,
   },
   metricRow: {
     flexDirection: 'row',
@@ -116,21 +119,21 @@ const styles = StyleSheet.create({
   },
   metricLabel: {
     fontFamily: fonts.body,
-    fontSize: fontSizes.sm,
+    fontSize: fontSizes.xs,
     color: colors.inkMuted,
   },
   metricValue: {
     fontFamily: fonts.monoBold,
-    fontSize: fontSizes.sm,
+    fontSize: fontSizes.xs,
     color: colors.ink,
     textAlign: 'right',
     flexShrink: 1,
   },
   button: {
-    marginTop: 10,
+    marginTop: 7,
     backgroundColor: colors.accent,
     borderRadius: radius.sm,
-    paddingVertical: 9,
+    paddingVertical: 7,
     alignItems: 'center',
   },
   disabled: {

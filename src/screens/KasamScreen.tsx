@@ -379,13 +379,13 @@ const styles = StyleSheet.create({
     backgroundColor: colors.background,
   },
   content: {
-    padding: 16,
-    gap: 14,
+    padding: 12,
+    gap: 10,
   },
   // Hızlı Erişim'in kaydırdığı bölümleri saran view — dıştaki ScrollView
   // içeriğinin gap'ini kendi içinde de koruması için aynı gap tekrarlanır.
   sectionAnchor: {
-    gap: 14,
+    gap: 10,
   },
   title: {
     fontFamily: fonts.headingBold,
@@ -453,8 +453,8 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     gap: 10,
-    marginTop: 10,
-    paddingTop: 10,
+    marginTop: 7,
+    paddingTop: 7,
     borderTopWidth: 1,
     borderTopColor: colors.border,
   },
@@ -475,7 +475,7 @@ const styles = StyleSheet.create({
   divider: {
     height: 1,
     backgroundColor: colors.border,
-    marginVertical: 10,
+    marginVertical: 7,
   },
   craftedFeedback: {
     fontFamily: fonts.bodyMedium,
