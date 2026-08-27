@@ -2,6 +2,7 @@ import { useMemo } from 'react';
 import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Card } from '../components/Card';
+import { MihenkaynakLogo } from '../components/MihenkaynakBrand';
 import { ProfitAnalysisCard } from '../components/ProfitAnalysisCard';
 import { ShopNameHeader } from '../components/ShopNameHeader';
 import { currentPositionValueTl, useGameStore } from '../store/useGameStore';
@@ -32,7 +33,10 @@ export function ProfilScreen() {
   return (
     <SafeAreaView style={styles.safeArea} edges={['top']}>
       <ScrollView contentContainerStyle={styles.content}>
-        <Text style={styles.title}>Profil</Text>
+        <View style={styles.profileHeader}>
+          <MihenkaynakLogo width={132} height={48} />
+          <Text style={styles.title}>Profil</Text>
+        </View>
 
         <Card style={styles.identityCard}>
           <Field label="OYUNCU" value={playerName} onChange={setPlayerName} />
@@ -108,6 +112,12 @@ const styles = StyleSheet.create({
     fontFamily: fonts.headingBold,
     fontSize: fontSizes.xl,
     color: colors.inkOnDark,
+  },
+  profileHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 12,
     marginBottom: 2,
   },
   identityCard: {

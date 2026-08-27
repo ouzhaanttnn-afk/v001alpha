@@ -16,6 +16,7 @@ import { CapitalSummary } from '../components/CapitalSummary';
 import { CustomerHypeCard } from '../components/CustomerHypeCard';
 import { FourXUnlockCard } from '../components/FourXUnlockCard';
 import { GoldTicker } from '../components/GoldTicker';
+import { MihenkaynakMark } from '../components/MihenkaynakBrand';
 import { NegotiationPanel } from '../components/NegotiationPanel';
 import { OFFER_STATUS_LABEL } from '../components/OfferCard';
 import { SectionLabel } from '../components/SectionLabel';
@@ -59,8 +60,6 @@ const lux = {
 export function DukkanScreen() {
   const { width } = useWindowDimensions();
   const navigation = useNavigation<DukkanNavigationProp>();
-  const playerName = useGameStore((s) => s.playerName);
-  const shopName = useGameStore((s) => s.shopName);
   const capital = useGameStore((s) => s.capital);
   const goldPrice = useGameStore((s) => s.goldPrice);
   const reputation = useGameStore((s) => s.reputation);
@@ -175,9 +174,9 @@ export function DukkanScreen() {
               <MetalRing size={46} strokeWidth={4} />
               <View style={styles.avatarInner}>
                 <RadialOrb size={38} colorStart="#5A2E86" colorEnd="#2A1140" />
-                <Text style={styles.avatarLetter}>
-                  {(playerName || shopName).trim().charAt(0).toUpperCase()}
-                </Text>
+                <View style={styles.brandMarkWrap}>
+                  <MihenkaynakMark size={28} />
+                </View>
               </View>
             </View>
             <View style={styles.levelGroup}>
@@ -554,10 +553,8 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     overflow: 'hidden',
   },
-  avatarLetter: {
-    fontFamily: fonts.displayBold,
-    fontSize: 13,
-    color: glass.refGold2,
+  brandMarkWrap: {
+    zIndex: 1,
   },
   levelGroup: {
     flexDirection: 'row',
